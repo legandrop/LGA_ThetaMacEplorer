@@ -1,0 +1,5 @@
+/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/ThetaMacExplorer.dir
+/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/edit_cache.dir
+/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/rebuild_cache.dir
+/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/ThetaMacExplorer_autogen_timestamp_deps.dir
+/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/ThetaMacExplorer_autogen.dir

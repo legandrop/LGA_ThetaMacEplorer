@@ -1,0 +1,41 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/ThetaMacExplorer_autogen.dir/AutogenUsed.txt"
+  "CMakeFiles/ThetaMacExplorer_autogen.dir/ParseCache.txt"
+  "ThetaMacExplorer_autogen"
+  "CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/mocs_compilation.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/mocs_compilation.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/main.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/main.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/services/DownloadManager.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/services/DownloadManager.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/services/ThetaCameraService.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/services/ThetaCameraService.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/FileMetadataPanel.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/FileMetadataPanel.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/MainWindow.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/MainWindow.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/PreviewPanel.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/PreviewPanel.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailGridWidget.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailGridWidget.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o.d"
+  "ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer"
+  "ThetaMacExplorer.pdb"
+  "ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp"
+  "ThetaMacExplorer_autogen/mocs_compilation.cpp"
+  "ThetaMacExplorer_autogen/timestamp"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX OBJCXX)
+  include(CMakeFiles/ThetaMacExplorer.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
