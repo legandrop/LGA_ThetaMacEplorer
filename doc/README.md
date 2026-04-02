@@ -22,6 +22,9 @@ Este directorio centraliza la documentacion funcional y tecnica del proyecto.
 - `hdr-grouping-observed-patterns.md`
   Resume el patron real observado en el catalogo exportado de la Z1 y la regla de agrupacion implementada a partir de esa evidencia.
 
+- `session-and-download-behavior.md`
+  Documenta persistencia de ventana, carpeta de descarga, logo, badge de descargado y la estructura final de subcarpetas por grupo.
+
 ## Criterio
 
 Antes de tocar comportamiento visible conviene mantener actualizada esta carpeta. En este proyecto es especialmente importante porque la app necesita separar:

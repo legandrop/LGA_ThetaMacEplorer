@@ -6,6 +6,7 @@
 #include <QProgressBar>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QCloseEvent>
 #include "thetaexplorer/CameraFileInfo.h"
 #include "thetaexplorer/MediaAssetGroup.h"
 
@@ -40,8 +41,18 @@ private:
     void setupUI();
     void setupConnections();
     void applyStyles();
+    void loadSettings();
+    void saveSettings() const;
+    void updateFolderLabel();
+    void refreshDownloadedStatus();
+    QString groupDownloadFolderName(const MediaAssetGroup& group) const;
+    QString groupDownloadFolderPath(const MediaAssetGroup& group) const;
+    QList<CameraFileInfo> selectedFilesFlattened() const;
     void updateButtonStates();
     void setStatusMessage(const QString& msg, const QString& color = "#b2b2b2");
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
     // Service
     ThetaCameraService*  m_service        = nullptr;
@@ -56,6 +67,7 @@ private:
 
     // Toolbar
     QWidget*             m_toolbar        = nullptr;
+    QLabel*              m_logoLabel      = nullptr;
     QLabel*              m_cameraLabel    = nullptr;
     QPushButton*         m_folderBtn      = nullptr;
     QPushButton*         m_exportCatalogBtn = nullptr;

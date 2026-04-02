@@ -41,6 +41,6 @@ private:
     ThumbnailTileWidget*         m_lastClicked = nullptr;
 
     static constexpr int TILE_W  = 160;
-    static constexpr int TILE_H  = 180;
+    static constexpr int TILE_H  = 214;
     static constexpr int SPACING = 8;
 };
