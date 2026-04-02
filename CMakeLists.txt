@@ -52,6 +52,7 @@ set(SOURCES
     src/main.cpp
     src/services/ThetaCameraService.cpp
     src/services/DownloadManager.cpp
+    src/services/HdrGroupingService.cpp
     src/ui/MainWindow.cpp
     src/ui/ThumbnailGridWidget.cpp
     src/ui/ThumbnailTileWidget.cpp
@@ -76,8 +77,10 @@ set_source_files_properties(${OBJCXX_SOURCES}
 set(HEADERS
     include/thetaexplorer/ColorUtils.h
     include/thetaexplorer/CameraFileInfo.h
+    include/thetaexplorer/MediaAssetGroup.h
     include/thetaexplorer/ThetaBridge.h
     include/thetaexplorer/ThetaCameraService.h
+    include/thetaexplorer/HdrGroupingService.h
     include/thetaexplorer/MainWindow.h
     include/thetaexplorer/ThumbnailGridWidget.h
     include/thetaexplorer/ThumbnailTileWidget.h

@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include "thetaexplorer/CameraFileInfo.h"
+#include "thetaexplorer/MediaAssetGroup.h"
 
 class ThetaCameraService;
 class ThumbnailGridWidget;
@@ -24,7 +25,7 @@ private slots:
     void onCameraConnected(const QString& name);
     void onCameraDisconnected();
     void onFileListReady(const QList<CameraFileInfo>& files);
-    void onSelectionChanged(const QList<CameraFileInfo>& selected);
+    void onSelectionChanged(const QList<MediaAssetGroup>& selected);
     void onDownloadClicked();
     void onDeleteClicked();
     void onBrowseFolderClicked();
@@ -70,7 +71,8 @@ private:
     // State
     QString              m_downloadFolder;
     QList<CameraFileInfo> m_catalogFiles;
-    QList<CameraFileInfo> m_selectedFiles;
+    QList<MediaAssetGroup> m_catalogGroups;
+    QList<MediaAssetGroup> m_selectedGroups;
     int                  m_downloadTotal  = 0;
     int                  m_downloadDone   = 0;
 };

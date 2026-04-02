@@ -2,7 +2,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QStackedWidget>
-#include "thetaexplorer/CameraFileInfo.h"
+#include "thetaexplorer/MediaAssetGroup.h"
 
 class PreviewPanel : public QWidget
 {
@@ -10,7 +10,7 @@ class PreviewPanel : public QWidget
 public:
     explicit PreviewPanel(QWidget* parent = nullptr);
 
-    void showFile(const CameraFileInfo& file, const QPixmap& thumbnail);
+    void showGroup(const MediaAssetGroup& group, const QPixmap& thumbnail);
     void showMultipleSelection(int count);
     void clearPreview();
 

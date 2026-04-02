@@ -1,16 +1,16 @@
 #pragma once
 #include <QWidget>
 #include <QLabel>
-#include "thetaexplorer/CameraFileInfo.h"
+#include "thetaexplorer/MediaAssetGroup.h"
 
 class ThumbnailTileWidget : public QWidget
 {
     Q_OBJECT
     Q_PROPERTY(bool selected READ isSelected WRITE setSelected)
 public:
-    explicit ThumbnailTileWidget(const CameraFileInfo& info, QWidget* parent = nullptr);
+    explicit ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* parent = nullptr);
 
-    const CameraFileInfo& fileInfo() const { return m_info; }
+    const MediaAssetGroup& group() const { return m_group; }
     bool  isSelected() const { return m_selected; }
     void  setSelected(bool s);
     void  setThumbnail(const QPixmap& pixmap);
@@ -29,7 +29,7 @@ protected:
 private:
     void updateStyleState();
 
-    CameraFileInfo m_info;
+    MediaAssetGroup m_group;
     QLabel*        m_thumb     = nullptr;
     QLabel*        m_nameLabel = nullptr;
     QLabel*        m_typeLabel = nullptr;

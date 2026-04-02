@@ -1,0 +1,34 @@
+#pragma once
+
+#include <QDateTime>
+#include <QMetaType>
+#include <QString>
+#include <QList>
+#include "thetaexplorer/CameraFileInfo.h"
+
+enum class MediaAssetKind {
+    SinglePhoto,
+    SingleRaw,
+    Video,
+    HdrJpegSet,
+    HdrRawSet,
+};
+
+struct MediaAssetGroup {
+    QString id;
+    MediaAssetKind kind = MediaAssetKind::SinglePhoto;
+    QList<CameraFileInfo> files;
+    CameraFileInfo representative;
+    int representativeIndex = 0;
+    bool isHdrSet = false;
+    bool isRaw = false;
+    bool isVideo = false;
+    QDateTime captureTime;
+    QString displayTitle;
+    QString subtitle;
+    QString representativeDevicePath() const { return representative.devicePath; }
+    int imageCount() const { return files.size(); }
+};
+
+Q_DECLARE_METATYPE(MediaAssetGroup)
+Q_DECLARE_METATYPE(QList<MediaAssetGroup>)
