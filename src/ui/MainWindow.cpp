@@ -479,10 +479,12 @@ void MainWindow::onDownloadClicked()
 
     m_downloadTotal = filesToDownload.size();
     m_downloadDone  = 0;
+    m_downloadHasDeterminateProgress = false;
 
-    m_progressBar->setRange(0, m_downloadTotal);
-    m_progressBar->setValue(0);
-    m_progressLabel->setText(QString("Downloading 0 / %1").arg(m_downloadTotal));
+    m_progressBar->setRange(0, 0);
+    m_progressLabel->setText(QString("Downloading %1 item%2...")
+        .arg(m_downloadTotal)
+        .arg(m_downloadTotal != 1 ? "s" : ""));
     m_progressBar->show();
     m_progressLabel->show();
     m_downloadBtn->setEnabled(false);
@@ -586,29 +588,36 @@ void MainWindow::onExportCatalogClicked()
 
 void MainWindow::onDownloadProgress(const QString& fileName, int percent)
 {
-    Q_UNUSED(fileName)
-    // Update overall bar based on individual file progress
-    // Approximate: each file contributes (percent / total) to overall
-    // We use per-file 0-100 to show current file progress
+    if (!m_downloadHasDeterminateProgress) {
+        m_downloadHasDeterminateProgress = true;
+        m_progressBar->setRange(0, m_downloadTotal * 100);
+    }
+
     m_progressBar->setValue(m_downloadDone * 100 + percent);
-    m_progressBar->setRange(0, m_downloadTotal * 100);
     m_progressLabel->setText(
-        QString("%1 / %2  (%3%)").arg(m_downloadDone).arg(m_downloadTotal).arg(percent)
+        QString("%1 / %2  %3%  %4")
+            .arg(m_downloadDone)
+            .arg(m_downloadTotal)
+            .arg(percent)
+            .arg(fileName)
     );
 }
 
 void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString& path)
 {
     m_downloadDone++;
-    m_progressBar->setValue(m_downloadDone * 100);
+    if (m_downloadHasDeterminateProgress) {
+        m_progressBar->setValue(m_downloadDone * 100);
+    }
     m_progressLabel->setText(
-        QString("%1 / %2 done").arg(m_downloadDone).arg(m_downloadTotal)
+        QString("%1 / %2 done  %3").arg(m_downloadDone).arg(m_downloadTotal).arg(fileName)
     );
 
     if (m_downloadDone >= m_downloadTotal) {
         m_progressBar->hide();
         m_progressLabel->hide();
         m_progressBar->setRange(0, 100);
+        m_downloadHasDeterminateProgress = false;
         refreshDownloadedStatus();
         updateButtonStates();
         setStatusMessage(
@@ -624,11 +633,14 @@ void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString&
 
 void MainWindow::onDownloadError(const QString& fileName, const QString& error)
 {
+    Q_UNUSED(fileName)
     m_downloadDone++;
     setStatusMessage("Download error: " + error, ColorUtils::ERROR_COLOR);
     if (m_downloadDone >= m_downloadTotal) {
         m_progressBar->hide();
         m_progressLabel->hide();
+        m_progressBar->setRange(0, 100);
+        m_downloadHasDeterminateProgress = false;
         updateButtonStates();
     }
 }
