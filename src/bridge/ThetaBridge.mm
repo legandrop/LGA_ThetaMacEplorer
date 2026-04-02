@@ -180,6 +180,7 @@ void ThetaBridge::requestDeleteFiles(const QList<CameraFileInfo>& files)
         d->cameraDel.usingBlockDeleteAPI = YES;
         ThetaBridge* weakBridge = this;
         __weak ThetaCameraDeviceAdapter* weakDelegate = d->cameraDel;
+        __block QString deleteFailureSummary;
         d->cameraDel.activeDeleteProgress =
             [camera requestDeleteFiles:icFiles
                           deleteFailed:^(NSDictionary<ICDeleteError,ICCameraItem*>* failures) {
@@ -189,13 +190,27 @@ void ThetaBridge::requestDeleteFiles(const QList<CameraFileInfo>& files)
                 }
 
                 QStringList failureDetails;
+                QStringList failureMessages;
                 for (NSString* key in failures) {
                     ICCameraItem* item = failures[key];
                     const QString itemName = item.name ? QString::fromNSString(item.name) : QString();
                     const QString reason = key ? QString::fromNSString(key) : QString("UnknownDeleteError");
                     failureDetails << QString("%1 (%2)").arg(itemName, reason);
+
+                    QString prettyReason = reason;
+                    if ([key isEqualToString:ICDeleteErrorReadOnly]) {
+                        prettyReason = "read-only on camera";
+                    } else if ([key isEqualToString:ICDeleteErrorFileMissing]) {
+                        prettyReason = "missing on camera";
+                    } else if ([key isEqualToString:ICDeleteErrorDeviceMissing]) {
+                        prettyReason = "camera disconnected";
+                    } else if ([key isEqualToString:ICDeleteErrorCanceled]) {
+                        prettyReason = "delete canceled";
+                    }
+                    failureMessages << QString("%1: %2").arg(itemName, prettyReason);
                 }
 
+                deleteFailureSummary = failureMessages.join("; ");
                 LOGW("bridge") << "Delete failed for individual items:" << failureDetails;
             }
                            completion:^(NSDictionary<ICDeleteResult,NSArray<ICCameraItem*>*>* result, NSError* _Nullable error) {
@@ -243,7 +258,9 @@ void ThetaBridge::requestDeleteFiles(const QList<CameraFileInfo>& files)
 
                 if (error || !failedNames.isEmpty() || !canceledNames.isEmpty()) {
                     QString msg;
-                    if (error) {
+                    if (!deleteFailureSummary.isEmpty()) {
+                        msg = deleteFailureSummary;
+                    } else if (error) {
                         msg = QString::fromNSString(error.localizedDescription);
                     } else if (!failedNames.isEmpty()) {
                         msg = QString("Failed to delete: %1").arg(failedNames.join(", "));
