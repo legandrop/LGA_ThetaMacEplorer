@@ -69,6 +69,32 @@ void ThetaBridge::stopBrowsing()
     }
 }
 
+void ThetaBridge::refreshCatalog()
+{
+    if (d->cameraDel && d->cameraDel.camera) {
+        LOGI("bridge") << "refreshCatalog on active session";
+        [d->cameraDel scheduleEnumeration];
+        return;
+    }
+
+    LOGI("bridge") << "refreshCatalog without active session; restarting browser";
+    stopBrowsing();
+    startBrowsing();
+}
+
+void ThetaBridge::recoverDownloadSession()
+{
+    if (d->cameraDel && d->cameraDel.camera) {
+        LOGW("bridge") << "recoverDownloadSession requested";
+        [d->cameraDel recoverSessionForDownloads];
+        return;
+    }
+
+    LOGW("bridge") << "recoverDownloadSession without active camera; restarting browser";
+    stopBrowsing();
+    startBrowsing();
+}
+
 void ThetaBridge::requestThumbnail(const CameraFileInfo& file)
 {
     if (!d->cameraDel || !d->cameraDel.camera) return;
@@ -76,30 +102,44 @@ void ThetaBridge::requestThumbnail(const CameraFileInfo& file)
     if (icFile) [icFile requestThumbnail];
 }
 
+void ThetaBridge::requestDownloadFile(const CameraFileInfo& file,
+                                      const QString& destinationPath)
+{
+    if (!d->cameraDel || !d->cameraDel.camera) {
+        LOGW("bridge") << "requestDownloadFile: no camera";
+        return;
+    }
+
+    ICCameraFile* icFile = (__bridge ICCameraFile*)file.nativeFileHandle;
+    if (!icFile) {
+        LOGW("bridge") << "requestDownloadFile: invalid file handle for" << file.name;
+        return;
+    }
+
+    ICCameraDevice* cam = d->cameraDel.camera;
+    NSURL* destURL = [NSURL fileURLWithPath:destinationPath.toNSString()];
+    NSDictionary* options = @{
+        ICDownloadsDirectoryURL:         destURL,
+        ICOverwrite:                     @YES,
+        ICDeleteAfterSuccessfulDownload: @NO
+    };
+    [cam requestDownloadFile:icFile
+                     options:options
+            downloadDelegate:d->cameraDel
+         didDownloadSelector:@selector(didDownloadFile:error:options:contextInfo:)
+                 contextInfo:NULL];
+    LOGD("bridge") << "Queued download:"
+                   << file.name
+                   << "destDir:" << destinationPath
+                   << "sizeBytes:" << file.sizeBytes
+                   << "devicePath:" << file.devicePath;
+}
+
 void ThetaBridge::requestDownloadFiles(const QList<CameraFileInfo>& files,
                                         const QString& destinationPath)
 {
-    if (!d->cameraDel || !d->cameraDel.camera) {
-        LOGW("bridge") << "requestDownloadFiles: no camera";
-        return;
-    }
-    ICCameraDevice* cam = d->cameraDel.camera;
-    NSURL* destURL = [NSURL fileURLWithPath:destinationPath.toNSString()];
-
     for (const CameraFileInfo& fi : files) {
-        ICCameraFile* icFile = (__bridge ICCameraFile*)fi.nativeFileHandle;
-        if (!icFile) continue;
-        NSDictionary* options = @{
-            ICDownloadsDirectoryURL:         destURL,
-            ICOverwrite:                     @YES,
-            ICDeleteAfterSuccessfulDownload: @NO
-        };
-        [cam requestDownloadFile:icFile
-                         options:options
-                downloadDelegate:d->cameraDel
-             didDownloadSelector:@selector(didDownloadFile:error:options:contextInfo:)
-                     contextInfo:NULL];
-        LOGD("bridge") << "Queued download:" << fi.name;
+        requestDownloadFile(fi, destinationPath);
     }
 }
 
@@ -239,6 +279,24 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     );
 }
 
+- (void)recoverSessionForDownloads
+{
+    if (!self.camera) {
+        LOGW("bridge") << "recoverSessionForDownloads: no camera";
+        return;
+    }
+
+    if (self.recoveringDownloadSession || self.reopenSessionAfterClose) {
+        LOGD("bridge") << "recoverSessionForDownloads already in progress";
+        return;
+    }
+
+    LOGW("bridge") << "Closing session to recover download pipeline";
+    self.recoveringDownloadSession = YES;
+    self.reopenSessionAfterClose = YES;
+    [self.camera requestCloseSession];
+}
+
 // ---- ICDeviceDelegate REQUIRED ----
 
 - (void)device:(ICDevice*)device didOpenSessionWithError:(NSError* _Nullable)error
@@ -246,11 +304,17 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     if (error) {
         LOGW("bridge") << "Session open error:"
                    << QString::fromNSString(error.localizedDescription);
+        self.recoveringDownloadSession = NO;
+        self.reopenSessionAfterClose = NO;
         QMetaObject::invokeMethod(self.qtBridge, "cameraError",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, QString::fromNSString(error.localizedDescription)));
     } else {
         LOGI("bridge") << "Session opened OK; scheduling enumeration";
+        if (self.recoveringDownloadSession) {
+            LOGI("bridge") << "Download session recovery completed";
+            self.recoveringDownloadSession = NO;
+        }
         // NOTE: do NOT call requestEnableTethering here.
         // It triggers cameraDeviceDidChangeCapability: callbacks which
         // were causing the burst-enumeration hang.
@@ -265,6 +329,17 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
         dispatch_block_cancel(self.pendingEnumeration);
         self.pendingEnumeration = nil;
     }
+    if (self.reopenSessionAfterClose && self.camera) {
+        self.reopenSessionAfterClose = NO;
+        LOGI("bridge") << "Reopening session after recovery close";
+        dispatch_after(
+            dispatch_time(DISPATCH_TIME_NOW, (int64_t)(350 * NSEC_PER_MSEC)),
+            dispatch_get_main_queue(),
+            ^{
+                [self.camera requestOpenSession];
+            }
+        );
+    }
 }
 
 - (void)didRemoveDevice:(ICDevice*)device
@@ -274,6 +349,8 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
         dispatch_block_cancel(self.pendingEnumeration);
         self.pendingEnumeration = nil;
     }
+    self.reopenSessionAfterClose = NO;
+    self.recoveringDownloadSession = NO;
     QMetaObject::invokeMethod(self.qtBridge, "cameraDisconnected",
                               Qt::QueuedConnection);
 }
@@ -462,17 +539,31 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
             contextInfo:(void*)contextInfo
 {
     QString name = QString::fromNSString(file.name);
+    NSString* savedName = options ? options[ICSavedFilename] : nil;
+    NSString* savedDir = nil;
+    id dirUrl = options ? options[ICDownloadsDirectoryURL] : nil;
+    if ([dirUrl isKindOfClass:[NSURL class]]) {
+        savedDir = [(NSURL*)dirUrl path];
+    }
     if (error) {
         QString msg = QString::fromNSString(error.localizedDescription);
-        LOGW("bridge") << "Download error" << name << ":" << msg;
+        LOGW("bridge") << "Download error"
+                       << name
+                       << "savedName:" << (savedName ? QString::fromNSString(savedName) : QString())
+                       << "destDir:" << (savedDir ? QString::fromNSString(savedDir) : QString())
+                       << "code:" << error.code
+                       << "domain:" << QString::fromNSString(error.domain ?: @"")
+                       << "message:" << msg;
         QMetaObject::invokeMethod(self.qtBridge, "downloadError",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, name),
                                   Q_ARG(QString, msg));
     } else {
-        NSString* savedName = options ? options[ICSavedFilename] : nil;
         QString savedPath   = savedName ? QString::fromNSString(savedName) : QString();
-        LOGI("bridge") << "Downloaded:" << name << "->" << savedPath;
+        LOGI("bridge") << "Downloaded:"
+                       << name
+                       << "->" << savedPath
+                       << "destDir:" << (savedDir ? QString::fromNSString(savedDir) : QString());
         QMetaObject::invokeMethod(self.qtBridge, "downloadFileCompleted",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, name),

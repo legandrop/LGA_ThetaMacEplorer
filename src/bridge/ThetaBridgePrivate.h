@@ -22,7 +22,10 @@
 // calling enumerateFiles directly. Result: exactly ONE enumeration fires after
 // the burst of ImageCaptureCore init callbacks settles (~300ms).
 @property (nonatomic, copy)   dispatch_block_t pendingEnumeration;
+@property (nonatomic, assign) BOOL reopenSessionAfterClose;
+@property (nonatomic, assign) BOOL recoveringDownloadSession;
 
 - (void)scheduleEnumeration;  // debounced entry point
 - (void)enumerateFiles;        // actual work, runs on main queue after debounce
+- (void)recoverSessionForDownloads;
 @end
