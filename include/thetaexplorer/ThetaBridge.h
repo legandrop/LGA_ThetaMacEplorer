@@ -18,8 +18,12 @@ public:
 
     void startBrowsing();
     void stopBrowsing();
+    void refreshCatalog();
+    void recoverDownloadSession();
 
     void requestThumbnail(const CameraFileInfo& file);
+    void requestDownloadFile(const CameraFileInfo& file,
+                             const QString& destinationPath);
     void requestDownloadFiles(const QList<CameraFileInfo>& files,
                               const QString& destinationPath);
     void requestDeleteFiles(const QList<CameraFileInfo>& files);

@@ -31,6 +31,7 @@ private slots:
     void onDownloadClicked();
     void onDeleteClicked();
     void onBrowseFolderClicked();
+    void onRefreshClicked();
     void onExportCatalogClicked();
     void onDownloadProgress(const QString& fileName, int percent);
     void onDownloadFileCompleted(const QString& fileName, const QString& path);
@@ -72,6 +73,7 @@ protected:
     QLabel*              m_logoLabel      = nullptr;
     QLabel*              m_cameraLabel    = nullptr;
     QPushButton*         m_folderBtn      = nullptr;
+    QPushButton*         m_refreshBtn     = nullptr;
     QPushButton*         m_exportCatalogBtn = nullptr;
     QLabel*              m_folderLabel    = nullptr;
     QPushButton*         m_downloadBtn    = nullptr;
@@ -90,4 +92,5 @@ protected:
     QList<MediaAssetGroup> m_selectedGroups;
     int                  m_downloadTotal  = 0;
     int                  m_downloadDone   = 0;
+    bool                 m_downloadInProgress = false;
 };

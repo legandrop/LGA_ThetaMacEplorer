@@ -191,6 +191,15 @@ void MainWindow::setupUI()
         "QPushButton:hover { background:#252525; color:#999; border-color:#444; }"
     );
 
+    m_refreshBtn = new QPushButton("↻ Refresh", this);
+    m_refreshBtn->setObjectName("refreshBtn");
+    m_refreshBtn->setFixedHeight(30);
+    m_refreshBtn->setStyleSheet(
+        "QPushButton { background:#1d1d1d; color:#777; border:1px solid #2e2e2e; "
+        "border-radius:4px; padding:0 10px; font-size:12px; }"
+        "QPushButton:hover { background:#252525; color:#999; border-color:#444; }"
+    );
+
     m_exportCatalogBtn = new QPushButton("Export catalog", this);
     m_exportCatalogBtn->setObjectName("exportCatalogBtn");
     m_exportCatalogBtn->setFixedHeight(30);
@@ -212,6 +221,7 @@ void MainWindow::setupUI()
     tbLayout->addWidget(m_cameraLabel);
     tbLayout->addWidget(sep1);
     tbLayout->addWidget(m_folderBtn);
+    tbLayout->addWidget(m_refreshBtn);
     tbLayout->addWidget(m_folderLabel);
     tbLayout->addWidget(m_exportCatalogBtn);
     tbLayout->addStretch();
@@ -323,6 +333,7 @@ void MainWindow::setupConnections()
 
     connect(m_downloadBtn, &QPushButton::clicked, this, &MainWindow::onDownloadClicked);
     connect(m_deleteBtn,   &QPushButton::clicked, this, &MainWindow::onDeleteClicked);
+    connect(m_refreshBtn,  &QPushButton::clicked, this, &MainWindow::onRefreshClicked);
     connect(m_exportCatalogBtn, &QPushButton::clicked, this, &MainWindow::onExportCatalogClicked);
 }
 
@@ -525,6 +536,9 @@ void MainWindow::onDownloadClicked()
 {
     if (m_selectedGroups.isEmpty()) return;
 
+    LOGI("ui") << "Download requested. selectedGroups:" << m_selectedGroups.size()
+               << "downloadRoot:" << m_downloadFolder;
+
     // Ensure download folder exists
     QDir().mkpath(m_downloadFolder);
 
@@ -575,6 +589,8 @@ void MainWindow::onDownloadClicked()
         }
     } else if (overwriteChoice == QMessageBox::Yes) {
         for (const MediaAssetGroup& group : groupsToReplace) {
+            LOGI("ui") << "Replacing local folder before redownload:"
+                       << groupDownloadFolderPath(group);
             QDir(groupDownloadFolderPath(group)).removeRecursively();
         }
     }
@@ -582,6 +598,7 @@ void MainWindow::onDownloadClicked()
     m_downloadTotal = filesToDownload.size();
     m_downloadDone  = 0;
     m_downloadHasDeterminateProgress = false;
+    m_downloadInProgress = true;
 
     m_progressBar->setRange(0, 0);
     m_progressLabel->setText(QString("Downloading %1 item%2...")
@@ -589,12 +606,15 @@ void MainWindow::onDownloadClicked()
         .arg(m_downloadTotal != 1 ? "s" : ""));
     m_progressBar->show();
     m_progressLabel->show();
-    m_downloadBtn->setEnabled(false);
-    m_deleteBtn->setEnabled(false);
+    updateButtonStates();
 
     for (const MediaAssetGroup& group : m_selectedGroups) {
         const QString targetFolder = groupDownloadFolderPath(group);
         QDir().mkpath(targetFolder);
+        LOGI("ui") << "Queueing group download:"
+                   << group.displayTitle
+                   << "files:" << group.files.size()
+                   << "targetFolder:" << targetFolder;
         m_service->downloadFiles(group.files, targetFolder);
     }
     setStatusMessage(QString("Downloading %1 file%2 to %3...")
@@ -638,6 +658,18 @@ void MainWindow::onBrowseFolderClicked()
     } else {
         LOGD("ui") << "Browse folder canceled by user";
     }
+}
+
+void MainWindow::onRefreshClicked()
+{
+    if (m_downloadInProgress || m_service->isDownloadActive()) {
+        setStatusMessage("Cannot refresh while a download is in progress.", ColorUtils::WARNING);
+        return;
+    }
+
+    LOGI("ui") << "Manual camera refresh requested";
+    setStatusMessage("Refreshing camera catalog...", ColorUtils::TEXT_DIM);
+    m_service->refresh();
 }
 
 void MainWindow::onExportCatalogClicked()
@@ -716,6 +748,7 @@ void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString&
     );
 
     if (m_downloadDone >= m_downloadTotal) {
+        m_downloadInProgress = false;
         m_progressBar->hide();
         m_progressLabel->hide();
         m_progressBar->setRange(0, 100);
@@ -735,14 +768,20 @@ void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString&
 
 void MainWindow::onDownloadError(const QString& fileName, const QString& error)
 {
-    Q_UNUSED(fileName)
     m_downloadDone++;
-    setStatusMessage("Download error: " + error, ColorUtils::ERROR_COLOR);
+    LOGW("ui") << "Download error surfaced to UI:"
+               << fileName
+               << "completed:" << m_downloadDone
+               << "of" << m_downloadTotal
+               << "message:" << error;
+    setStatusMessage("Download error: " + fileName + " - " + error, ColorUtils::ERROR_COLOR);
     if (m_downloadDone >= m_downloadTotal) {
+        m_downloadInProgress = false;
         m_progressBar->hide();
         m_progressLabel->hide();
         m_progressBar->setRange(0, 100);
         m_downloadHasDeterminateProgress = false;
+        refreshDownloadedStatus();
         updateButtonStates();
     }
 }
@@ -766,6 +805,7 @@ void MainWindow::onErrorOccurred(const QString& message)
 {
     LOGW("ui") << "Error:" << message;
     setStatusMessage(message, ColorUtils::ERROR_COLOR);
+    m_downloadInProgress = false;
     updateButtonStates();
     m_progressBar->hide();
     m_progressLabel->hide();
@@ -776,8 +816,11 @@ void MainWindow::updateButtonStates()
     bool hasCamera   = m_service->isCameraConnected();
     bool hasSelected = !m_selectedGroups.isEmpty();
     bool hasCatalog  = !m_catalogFiles.isEmpty();
-    m_downloadBtn->setEnabled(hasCamera && hasSelected);
-    m_deleteBtn->setEnabled(hasCamera && hasSelected);
+    const bool busy = m_downloadInProgress || m_service->isDownloadActive();
+    m_downloadBtn->setEnabled(hasCamera && hasSelected && !busy);
+    m_deleteBtn->setEnabled(hasCamera && hasSelected && !busy);
+    m_folderBtn->setEnabled(!busy);
+    m_refreshBtn->setEnabled(hasCamera && !busy);
     m_exportCatalogBtn->setEnabled(hasCamera && hasCatalog);
 }
 
