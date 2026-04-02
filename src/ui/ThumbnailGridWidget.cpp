@@ -27,25 +27,25 @@ ThumbnailGridWidget::ThumbnailGridWidget(QWidget* parent)
     setWidget(m_container);
 }
 
-void ThumbnailGridWidget::setFiles(const QList<CameraFileInfo>& files)
+void ThumbnailGridWidget::setGroups(const QList<MediaAssetGroup>& groups)
 {
     clearAll();
-    for (const CameraFileInfo& fi : files) {
-        auto* tile = new ThumbnailTileWidget(fi, m_container);
+    QList<CameraFileInfo> thumbnailRequests;
+    for (const MediaAssetGroup& group : groups) {
+        auto* tile = new ThumbnailTileWidget(group, m_container);
         connect(tile, &ThumbnailTileWidget::clicked,
                 this, &ThumbnailGridWidget::onTileClicked);
         m_tiles.append(tile);
+        thumbnailRequests.append(group.representative);
     }
     relayoutGrid();
-
-    // Request thumbnails for all files
-    emit thumbnailsNeeded(files);
+    emit thumbnailsNeeded(thumbnailRequests);
 }
 
 void ThumbnailGridWidget::setThumbnail(const QString& devicePath, const QPixmap& thumbnail)
 {
     for (ThumbnailTileWidget* tile : m_tiles) {
-        if (tile->fileInfo().devicePath == devicePath) {
+        if (tile->group().representativeDevicePath() == devicePath) {
             tile->setThumbnail(thumbnail);
             return;
         }
@@ -56,8 +56,11 @@ void ThumbnailGridWidget::removeFiles(const QStringList& devicePaths)
 {
     QList<ThumbnailTileWidget*> toRemove;
     for (ThumbnailTileWidget* tile : m_tiles) {
-        if (devicePaths.contains(tile->fileInfo().devicePath)) {
-            toRemove.append(tile);
+        for (const CameraFileInfo& file : tile->group().files) {
+            if (devicePaths.contains(file.devicePath)) {
+                toRemove.append(tile);
+                break;
+            }
         }
     }
     for (ThumbnailTileWidget* tile : toRemove) {
@@ -66,7 +69,7 @@ void ThumbnailGridWidget::removeFiles(const QStringList& devicePaths)
         tile->deleteLater();
     }
     relayoutGrid();
-    emit selectionChanged(selectedFiles());
+    emit selectionChanged(selectedGroups());
 }
 
 void ThumbnailGridWidget::clearAll()
@@ -80,11 +83,11 @@ void ThumbnailGridWidget::clearAll()
     emit selectionChanged({});
 }
 
-QList<CameraFileInfo> ThumbnailGridWidget::selectedFiles() const
+QList<MediaAssetGroup> ThumbnailGridWidget::selectedGroups() const
 {
-    QList<CameraFileInfo> result;
+    QList<MediaAssetGroup> result;
     for (ThumbnailTileWidget* tile : m_tiles) {
-        if (tile->isSelected()) result.append(tile->fileInfo());
+        if (tile->isSelected()) result.append(tile->group());
     }
     return result;
 }
@@ -112,7 +115,7 @@ void ThumbnailGridWidget::onTileClicked(ThumbnailTileWidget* tile, Qt::KeyboardM
         tile->setSelected(true);
         m_lastClicked = tile;
     }
-    emit selectionChanged(selectedFiles());
+    emit selectionChanged(selectedGroups());
 }
 
 void ThumbnailGridWidget::relayoutGrid()
@@ -150,12 +153,12 @@ void ThumbnailGridWidget::keyPressEvent(QKeyEvent* e)
 {
     if (e->key() == Qt::Key_A && (e->modifiers() & Qt::ControlModifier)) {
         for (ThumbnailTileWidget* t : m_tiles) t->setSelected(true);
-        emit selectionChanged(selectedFiles());
+        emit selectionChanged(selectedGroups());
         return;
     }
     if (e->key() == Qt::Key_Escape) {
         for (ThumbnailTileWidget* t : m_tiles) t->setSelected(false);
-        emit selectionChanged(selectedFiles());
+        emit selectionChanged(selectedGroups());
         return;
     }
     QScrollArea::keyPressEvent(e);

@@ -85,27 +85,45 @@ void FileMetadataPanel::setRow(QLabel* val, const QString& text)
     if (val) val->setText(text);
 }
 
-void FileMetadataPanel::showMetadata(const CameraFileInfo& file)
+void FileMetadataPanel::showMetadata(const MediaAssetGroup& group)
 {
-    setRow(m_nameVal, file.name);
+    if (group.files.size() == 1) {
+        const CameraFileInfo& file = group.files.first();
+        setRow(m_nameVal, file.name);
 
-    QString type;
-    if (file.isVideo) type = "Video (MP4/MOV)";
-    else if (file.isRaw) type = "RAW Image (DNG)";
-    else {
-        int dot = file.name.lastIndexOf('.');
-        type = dot >= 0 ? file.name.mid(dot + 1).toUpper() + " Image" : "Image";
+        QString type;
+        if (file.isVideo) type = "Video (MP4/MOV)";
+        else if (file.isRaw) type = "RAW Image (DNG)";
+        else {
+            int dot = file.name.lastIndexOf('.');
+            type = dot >= 0 ? file.name.mid(dot + 1).toUpper() + " Image" : "Image";
+        }
+        setRow(m_typeVal, type);
+        setRow(m_sizeVal, formatSize(file.sizeBytes));
+        setRow(m_dateVal, file.creationDate.isValid()
+               ? file.creationDate.toString("yyyy-MM-dd  hh:mm:ss")
+               : "—");
+        QString dims = (file.width > 0 && file.height > 0)
+                       ? QString("%1 × %2").arg(file.width).arg(file.height)
+                       : "—";
+        setRow(m_dimVal, dims);
+        setRow(m_pathVal, file.devicePath.isEmpty() ? "—" : file.devicePath);
+        return;
     }
-    setRow(m_typeVal, type);
-    setRow(m_sizeVal, formatSize(file.sizeBytes));
-    setRow(m_dateVal, file.creationDate.isValid()
-           ? file.creationDate.toString("yyyy-MM-dd  hh:mm:ss")
+
+    qint64 totalBytes = 0;
+    for (const CameraFileInfo& file : group.files) {
+        totalBytes += file.sizeBytes;
+    }
+
+    setRow(m_nameVal, group.displayTitle);
+    setRow(m_typeVal, group.subtitle);
+    setRow(m_sizeVal, formatSize(totalBytes));
+    setRow(m_dateVal, group.captureTime.isValid()
+           ? group.captureTime.toString("yyyy-MM-dd  hh:mm:ss")
            : "—");
-    QString dims = (file.width > 0 && file.height > 0)
-                   ? QString("%1 × %2").arg(file.width).arg(file.height)
-                   : "—";
-    setRow(m_dimVal, dims);
-    setRow(m_pathVal, file.devicePath.isEmpty() ? "—" : file.devicePath);
+    setRow(m_dimVal, QString("%1 images").arg(group.files.size()));
+    setRow(m_pathVal, group.representative.devicePath.isEmpty() ? "—" : group.representative.devicePath);
 }
 
 void FileMetadataPanel::showMultipleSelection(int count)

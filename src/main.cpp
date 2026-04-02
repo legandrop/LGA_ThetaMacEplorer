@@ -2,6 +2,7 @@
 #include "thetaexplorer/CameraFileInfo.h"
 #include "thetaexplorer/ColorUtils.h"
 #include "thetaexplorer/Logger.h"
+#include "thetaexplorer/MediaAssetGroup.h"
 #include <QApplication>
 #include <QFile>
 #include <QTextStream>
@@ -26,6 +27,8 @@ int main(int argc, char* argv[])
     // Register custom metatypes for cross-thread signal/slot use
     qRegisterMetaType<CameraFileInfo>("CameraFileInfo");
     qRegisterMetaType<QList<CameraFileInfo>>("QList<CameraFileInfo>");
+    qRegisterMetaType<MediaAssetGroup>("MediaAssetGroup");
+    qRegisterMetaType<QList<MediaAssetGroup>>("QList<MediaAssetGroup>");
     qRegisterMetaType<QPixmap>("QPixmap");
 
     // Load QSS from resources, fall back to inline ColorUtils stylesheet

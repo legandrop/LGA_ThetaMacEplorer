@@ -1,5 +1,6 @@
 #include "thetaexplorer/MainWindow.h"
 #include "thetaexplorer/ThetaCameraService.h"
+#include "thetaexplorer/HdrGroupingService.h"
 #include "thetaexplorer/ThumbnailGridWidget.h"
 #include "thetaexplorer/PreviewPanel.h"
 #include "thetaexplorer/FileMetadataPanel.h"
@@ -264,9 +265,9 @@ void MainWindow::setupConnections()
     connect(m_service, &ThetaCameraService::thumbnailReady,
             this, [this](const QString& path, const QPixmap& px) {
                 // Update preview if the selected file just got its thumbnail
-                if (m_selectedFiles.size() == 1 &&
-                    m_selectedFiles.first().devicePath == path) {
-                    m_previewPanel->showFile(m_selectedFiles.first(), px);
+                if (m_selectedGroups.size() == 1 &&
+                    m_selectedGroups.first().representativeDevicePath() == path) {
+                    m_previewPanel->showGroup(m_selectedGroups.first(), px);
                 }
             });
     connect(m_service, &ThetaCameraService::downloadProgress,
@@ -310,7 +311,8 @@ void MainWindow::onCameraDisconnected()
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
     m_catalogFiles.clear();
-    m_selectedFiles.clear();
+    m_catalogGroups.clear();
+    m_selectedGroups.clear();
     updateButtonStates();
     setStatusMessage("Camera disconnected.", ColorUtils::TEXT_DIM);
 }
@@ -318,10 +320,11 @@ void MainWindow::onCameraDisconnected()
 void MainWindow::onFileListReady(const QList<CameraFileInfo>& files)
 {
     m_catalogFiles = files;
-    m_gridWidget->setFiles(files);
+    m_catalogGroups = HdrGroupingService::buildGroups(files);
+    m_gridWidget->setGroups(m_catalogGroups);
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
-    m_selectedFiles.clear();
+    m_selectedGroups.clear();
     updateButtonStates();
 
     int imgs   = 0, vids = 0, raws = 0;
@@ -330,30 +333,34 @@ void MainWindow::onFileListReady(const QList<CameraFileInfo>& files)
         else if (f.isRaw) raws++;
         else imgs++;
     }
-    QString summary = QString("%1 file%2  (%3 photo%4, %5 video%6, %7 RAW)")
-        .arg(files.size()).arg(files.size() != 1 ? "s" : "")
+    int hdrJpg = 0, hdrRaw = 0;
+    for (const auto& g : m_catalogGroups) {
+        if (g.kind == MediaAssetKind::HdrJpegSet) hdrJpg++;
+        if (g.kind == MediaAssetKind::HdrRawSet) hdrRaw++;
+    }
+    QString summary = QString("%1 browser item%2  (%3 photo%4, %5 video%6, %7 RAW, %8 HDR JPG, %9 HDR DNG)")
+        .arg(m_catalogGroups.size()).arg(m_catalogGroups.size() != 1 ? "s" : "")
         .arg(imgs).arg(imgs != 1 ? "s" : "")
         .arg(vids).arg(vids != 1 ? "s" : "")
-        .arg(raws);
+        .arg(raws)
+        .arg(hdrJpg)
+        .arg(hdrRaw);
     setStatusMessage(summary);
 }
 
-void MainWindow::onSelectionChanged(const QList<CameraFileInfo>& selected)
+void MainWindow::onSelectionChanged(const QList<MediaAssetGroup>& selected)
 {
-    m_selectedFiles = selected;
+    m_selectedGroups = selected;
     updateButtonStates();
 
     if (selected.isEmpty()) {
         m_previewPanel->clearPreview();
         m_metaPanel->clearMetadata();
     } else if (selected.size() == 1) {
-        const CameraFileInfo& f = selected.first();
-        // Find tile's current thumbnail (if already loaded)
-        // We pass a null pixmap; service will have already cached via thumbnailReady
-        m_previewPanel->showFile(f, QPixmap()); // will update when thumbnailReady fires
-        m_metaPanel->showMetadata(f);
-        // Request thumbnail explicitly in case it's not loaded yet
-        m_service->requestThumbnail(f);
+        const MediaAssetGroup& group = selected.first();
+        m_previewPanel->showGroup(group, QPixmap());
+        m_metaPanel->showMetadata(group);
+        m_service->requestThumbnail(group.representative);
     } else {
         m_previewPanel->showMultipleSelection(selected.size());
         m_metaPanel->showMultipleSelection(selected.size());
@@ -362,12 +369,17 @@ void MainWindow::onSelectionChanged(const QList<CameraFileInfo>& selected)
 
 void MainWindow::onDownloadClicked()
 {
-    if (m_selectedFiles.isEmpty()) return;
+    if (m_selectedGroups.isEmpty()) return;
 
     // Ensure download folder exists
     QDir().mkpath(m_downloadFolder);
 
-    m_downloadTotal = m_selectedFiles.size();
+    QList<CameraFileInfo> filesToDownload;
+    for (const MediaAssetGroup& group : m_selectedGroups) {
+        filesToDownload.append(group.files);
+    }
+
+    m_downloadTotal = filesToDownload.size();
     m_downloadDone  = 0;
 
     m_progressBar->setRange(0, m_downloadTotal);
@@ -378,7 +390,7 @@ void MainWindow::onDownloadClicked()
     m_downloadBtn->setEnabled(false);
     m_deleteBtn->setEnabled(false);
 
-    m_service->downloadFiles(m_selectedFiles, m_downloadFolder);
+    m_service->downloadFiles(filesToDownload, m_downloadFolder);
     setStatusMessage(QString("Downloading %1 file%2 to %3...")
         .arg(m_downloadTotal)
         .arg(m_downloadTotal != 1 ? "s" : "")
@@ -387,17 +399,21 @@ void MainWindow::onDownloadClicked()
 
 void MainWindow::onDeleteClicked()
 {
-    if (m_selectedFiles.isEmpty()) return;
-    if (!ConfirmDeleteDialog::confirm(m_selectedFiles.size(), this)) return;
+    if (m_selectedGroups.isEmpty()) return;
+    QList<CameraFileInfo> filesToDelete;
+    for (const MediaAssetGroup& group : m_selectedGroups) {
+        filesToDelete.append(group.files);
+    }
+    if (!ConfirmDeleteDialog::confirm(filesToDelete.size(), this)) return;
 
     m_deleteBtn->setEnabled(false);
     m_downloadBtn->setEnabled(false);
     setStatusMessage(QString("Deleting %1 file%2 from camera...")
-        .arg(m_selectedFiles.size())
-        .arg(m_selectedFiles.size() != 1 ? "s" : ""),
+        .arg(filesToDelete.size())
+        .arg(filesToDelete.size() != 1 ? "s" : ""),
         ColorUtils::WARNING);
 
-    m_service->deleteFiles(m_selectedFiles);
+    m_service->deleteFiles(filesToDelete);
 }
 
 void MainWindow::onBrowseFolderClicked()
@@ -519,7 +535,7 @@ void MainWindow::onDeleteCompleted(const QStringList& deletedPaths)
     m_gridWidget->removeFiles(deletedPaths);
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
-    m_selectedFiles.clear();
+    m_selectedGroups.clear();
     updateButtonStates();
     setStatusMessage(
         QString("Deleted %1 file%2 from camera.")
@@ -541,7 +557,7 @@ void MainWindow::onErrorOccurred(const QString& message)
 void MainWindow::updateButtonStates()
 {
     bool hasCamera   = m_service->isCameraConnected();
-    bool hasSelected = !m_selectedFiles.isEmpty();
+    bool hasSelected = !m_selectedGroups.isEmpty();
     bool hasCatalog  = !m_catalogFiles.isEmpty();
     m_downloadBtn->setEnabled(hasCamera && hasSelected);
     m_deleteBtn->setEnabled(hasCamera && hasSelected);

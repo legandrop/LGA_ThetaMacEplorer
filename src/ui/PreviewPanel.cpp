@@ -44,9 +44,9 @@ PreviewPanel::PreviewPanel(QWidget* parent)
     layout->addWidget(m_stack);
 }
 
-void PreviewPanel::showFile(const CameraFileInfo& file, const QPixmap& thumbnail)
+void PreviewPanel::showGroup(const MediaAssetGroup& group, const QPixmap& thumbnail)
 {
-    if (file.isVideo) {
+    if (group.isVideo) {
         m_showingImage = false;
         m_stack->setCurrentIndex(1);
     } else if (!thumbnail.isNull()) {

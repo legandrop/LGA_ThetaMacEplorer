@@ -5,11 +5,12 @@
 #include <QMouseEvent>
 #include <QEnterEvent>
 #include <QFontMetrics>
+#include <QFileInfo>
 #include <QStyle>
 
-ThumbnailTileWidget::ThumbnailTileWidget(const CameraFileInfo& info, QWidget* parent)
+ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* parent)
     : QWidget(parent)
-    , m_info(info)
+    , m_group(group)
 {
     setFixedSize(160, 180);
     setObjectName("thumbnailTile");
@@ -29,10 +30,10 @@ ThumbnailTileWidget::ThumbnailTileWidget(const CameraFileInfo& info, QWidget* pa
     );
 
     // Show file type icon initially
-    if (info.isVideo) {
+    if (group.isVideo) {
         m_thumb->setText("▶");
         m_thumb->setStyleSheet("background:#111; border-radius:3px; color:#774dcb; font-size:28px;");
-    } else if (info.isRaw) {
+    } else if (group.isRaw) {
         m_thumb->setText("RAW");
         m_thumb->setStyleSheet("background:#111; border-radius:3px; color:#e8a838; font-size:16px; font-weight:bold;");
     } else {
@@ -49,7 +50,7 @@ ThumbnailTileWidget::ThumbnailTileWidget(const CameraFileInfo& info, QWidget* pa
 
     // Elide long names
     QFontMetrics fm(m_nameLabel->font());
-    m_nameLabel->setText(fm.elidedText(info.name, Qt::ElideMiddle, 148));
+    m_nameLabel->setText(fm.elidedText(group.displayTitle, Qt::ElideMiddle, 148));
     m_nameLabel->setStyleSheet("color: #888888; font-size: 11px; background: transparent;");
 
     // Type badge
@@ -58,16 +59,7 @@ ThumbnailTileWidget::ThumbnailTileWidget(const CameraFileInfo& info, QWidget* pa
     m_typeLabel->setFixedWidth(148);
     m_typeLabel->setStyleSheet("color: #555555; font-size: 10px; background: transparent;");
 
-    QString typeStr;
-    if (info.isVideo) typeStr = "VIDEO";
-    else if (info.isRaw) typeStr = "RAW";
-    else {
-        // guess extension from name
-        int dot = info.name.lastIndexOf('.');
-        if (dot >= 0) typeStr = info.name.mid(dot + 1).toUpper();
-        else typeStr = "IMG";
-    }
-    m_typeLabel->setText(typeStr);
+    m_typeLabel->setText(group.subtitle);
 
     layout->addWidget(m_thumb);
     layout->addWidget(m_nameLabel);

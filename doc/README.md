@@ -19,6 +19,9 @@ Este directorio centraliza la documentacion funcional y tecnica del proyecto.
 - `logging.md`
   Documenta el sistema de logging central, las categorias, las variables de entorno y el criterio de uso.
 
+- `hdr-grouping-observed-patterns.md`
+  Resume el patron real observado en el catalogo exportado de la Z1 y la regla de agrupacion implementada a partir de esa evidencia.
+
 ## Criterio
 
 Antes de tocar comportamiento visible conviene mantener actualizada esta carpeta. En este proyecto es especialmente importante porque la app necesita separar:

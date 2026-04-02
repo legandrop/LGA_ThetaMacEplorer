@@ -2,7 +2,7 @@
 #include <QScrollArea>
 #include <QGridLayout>
 #include <QList>
-#include "thetaexplorer/CameraFileInfo.h"
+#include "thetaexplorer/MediaAssetGroup.h"
 
 class ThumbnailTileWidget;
 
@@ -12,15 +12,15 @@ class ThumbnailGridWidget : public QScrollArea
 public:
     explicit ThumbnailGridWidget(QWidget* parent = nullptr);
 
-    void setFiles(const QList<CameraFileInfo>& files);
+    void setGroups(const QList<MediaAssetGroup>& groups);
     void setThumbnail(const QString& devicePath, const QPixmap& thumbnail);
     void removeFiles(const QStringList& devicePaths);
     void clearAll();
 
-    QList<CameraFileInfo> selectedFiles() const;
+    QList<MediaAssetGroup> selectedGroups() const;
 
 signals:
-    void selectionChanged(const QList<CameraFileInfo>& selected);
+    void selectionChanged(const QList<MediaAssetGroup>& selected);
     void thumbnailsNeeded(const QList<CameraFileInfo>& files);
 
 protected:

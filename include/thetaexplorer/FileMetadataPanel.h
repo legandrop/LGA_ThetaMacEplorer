@@ -1,7 +1,7 @@
 #pragma once
 #include <QWidget>
 #include <QLabel>
-#include "thetaexplorer/CameraFileInfo.h"
+#include "thetaexplorer/MediaAssetGroup.h"
 
 class FileMetadataPanel : public QWidget
 {
@@ -9,7 +9,7 @@ class FileMetadataPanel : public QWidget
 public:
     explicit FileMetadataPanel(QWidget* parent = nullptr);
 
-    void showMetadata(const CameraFileInfo& file);
+    void showMetadata(const MediaAssetGroup& group);
     void showMultipleSelection(int count);
     void clearMetadata();
 
