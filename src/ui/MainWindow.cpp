@@ -5,7 +5,6 @@
 #include "thetaexplorer/PreviewPanel.h"
 #include "thetaexplorer/FileMetadataPanel.h"
 #include "thetaexplorer/DownloadManager.h"
-#include "thetaexplorer/CameraCatalogDebugExporter.h"
 #include "thetaexplorer/ConfirmDeleteDialog.h"
 #include "thetaexplorer/ColorUtils.h"
 #include "thetaexplorer/Logger.h"
@@ -43,28 +42,6 @@ QString chooseDirectoryNonNative(QWidget* parent,
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setModal(true);
-    dialog.raise();
-    dialog.activateWindow();
-
-    if (dialog.exec() != QDialog::Accepted) {
-        return QString();
-    }
-
-    const QStringList selected = dialog.selectedFiles();
-    return selected.isEmpty() ? QString() : selected.first();
-}
-
-QString chooseSaveFileNonNative(QWidget* parent,
-                                const QString& title,
-                                const QString& initialPath,
-                                const QString& filter)
-{
-    QFileDialog dialog(parent, title, initialPath, filter);
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    dialog.setModal(true);
-    dialog.selectFile(initialPath);
     dialog.raise();
     dialog.activateWindow();
 
@@ -175,6 +152,10 @@ void MainWindow::setupUI()
     m_cameraLabel->setStyleSheet("color: #444444; font-size: 13px;");
     m_cameraLabel->setObjectName("cameraLabel");
 
+    m_batteryLabel = new QLabel("Battery --", this);
+    m_batteryLabel->setStyleSheet("color: #555555; font-size: 12px;");
+    m_batteryLabel->setObjectName("batteryLabel");
+
     // Separator
     auto* sep1 = new QFrame(this);
     sep1->setFrameShape(QFrame::VLine);
@@ -200,16 +181,6 @@ void MainWindow::setupUI()
         "QPushButton:hover { background:#252525; color:#999; border-color:#444; }"
     );
 
-    m_exportCatalogBtn = new QPushButton("Export catalog", this);
-    m_exportCatalogBtn->setObjectName("exportCatalogBtn");
-    m_exportCatalogBtn->setFixedHeight(30);
-    m_exportCatalogBtn->setEnabled(false);
-    m_exportCatalogBtn->setStyleSheet(
-        "QPushButton { background:#1d1d1d; color:#777; border:1px solid #2e2e2e; "
-        "border-radius:4px; padding:0 10px; font-size:12px; }"
-        "QPushButton:hover { background:#252525; color:#999; border-color:#444; }"
-    );
-
     m_folderLabel = new QLabel(this);
     m_folderLabel->setStyleSheet("color: #555555; font-size: 11px;");
     m_folderLabel->setMaximumWidth(200);
@@ -219,11 +190,11 @@ void MainWindow::setupUI()
 
     tbLayout->addWidget(m_logoLabel);
     tbLayout->addWidget(m_cameraLabel);
+    tbLayout->addWidget(m_batteryLabel);
     tbLayout->addWidget(sep1);
     tbLayout->addWidget(m_folderBtn);
-    tbLayout->addWidget(m_refreshBtn);
     tbLayout->addWidget(m_folderLabel);
-    tbLayout->addWidget(m_exportCatalogBtn);
+    tbLayout->addWidget(m_refreshBtn);
     tbLayout->addStretch();
 
     // Progress area (hidden by default)
@@ -323,6 +294,8 @@ void MainWindow::setupConnections()
             this, &MainWindow::onDownloadFileCompleted);
     connect(m_service, &ThetaCameraService::downloadError,
             this, &MainWindow::onDownloadError);
+    connect(m_service, &ThetaCameraService::batteryLevelChanged,
+            this, &MainWindow::onBatteryLevelChanged);
     connect(m_service, &ThetaCameraService::deleteCompleted,
             this, &MainWindow::onDeleteCompleted);
     connect(m_service, &ThetaCameraService::errorOccurred,
@@ -334,7 +307,6 @@ void MainWindow::setupConnections()
     connect(m_downloadBtn, &QPushButton::clicked, this, &MainWindow::onDownloadClicked);
     connect(m_deleteBtn,   &QPushButton::clicked, this, &MainWindow::onDeleteClicked);
     connect(m_refreshBtn,  &QPushButton::clicked, this, &MainWindow::onRefreshClicked);
-    connect(m_exportCatalogBtn, &QPushButton::clicked, this, &MainWindow::onExportCatalogClicked);
 }
 
 void MainWindow::applyStyles()
@@ -472,6 +444,8 @@ void MainWindow::onCameraDisconnected()
 {
     m_cameraLabel->setText("⬤  No camera connected");
     m_cameraLabel->setStyleSheet("color: #444444; font-size: 13px;");
+    m_batteryLabel->setText("Battery --");
+    m_batteryLabel->setStyleSheet("color: #555555; font-size: 12px;");
     m_gridWidget->clearAll();
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
@@ -672,54 +646,6 @@ void MainWindow::onRefreshClicked()
     m_service->refresh();
 }
 
-void MainWindow::onExportCatalogClicked()
-{
-    LOGD("ui") << "Export catalog clicked. catalogFiles=" << m_catalogFiles.size();
-
-    if (m_catalogFiles.isEmpty()) {
-        LOGW("ui") << "Export catalog aborted: no catalog loaded";
-        QMessageBox::information(this, "Export catalog", "No camera catalog is loaded yet.");
-        return;
-    }
-
-    QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-        + "/ThetaMacExplorer/CatalogDumps";
-    if (!QDir().mkpath(defaultDir)) {
-        LOGW("ui") << "Export catalog: could not ensure default dir" << defaultDir;
-    }
-
-    const QString defaultName = QString("theta-catalog-%1.json")
-        .arg(QDateTime::currentDateTime().toString("yyyyMMdd-hhmmss"));
-
-    const QString outputPath = chooseSaveFileNonNative(
-        this,
-        "Export camera catalog",
-        defaultDir + "/" + defaultName,
-        "JSON files (*.json)"
-    );
-
-    if (outputPath.isEmpty()) {
-        LOGD("ui") << "Export catalog canceled by user";
-        return;
-    }
-
-    LOGI("ui") << "Export catalog target path:" << outputPath;
-
-    QString errorMessage;
-    if (!CameraCatalogDebugExporter::exportCatalog(m_catalogFiles, outputPath, &errorMessage)) {
-        LOGW("ui") << "Export catalog failed:" << errorMessage;
-        QMessageBox::warning(this, "Export catalog", errorMessage);
-        setStatusMessage("Catalog export failed: " + errorMessage, ColorUtils::ERROR_COLOR);
-        return;
-    }
-
-    LOGI("ui") << "Export catalog completed:" << outputPath;
-    setStatusMessage(
-        QString("Camera catalog exported to %1").arg(outputPath),
-        ColorUtils::SUCCESS
-    );
-}
-
 void MainWindow::onDownloadProgress(const QString& fileName, int percent)
 {
     if (!m_downloadHasDeterminateProgress) {
@@ -811,17 +737,33 @@ void MainWindow::onErrorOccurred(const QString& message)
     m_progressLabel->hide();
 }
 
+void MainWindow::onBatteryLevelChanged(int percent, bool available)
+{
+    if (!available || percent < 0) {
+        m_batteryLabel->setText("Battery --");
+        m_batteryLabel->setStyleSheet("color: #555555; font-size: 12px;");
+        return;
+    }
+
+    QString color = "#4caf7d";
+    if (percent <= 20) color = "#d96c6c";
+    else if (percent <= 50) color = "#c8a24d";
+
+    m_batteryLabel->setText(QString("Battery %1%").arg(percent));
+    m_batteryLabel->setStyleSheet(
+        QString("color: %1; font-size: 12px;").arg(color)
+    );
+}
+
 void MainWindow::updateButtonStates()
 {
     bool hasCamera   = m_service->isCameraConnected();
     bool hasSelected = !m_selectedGroups.isEmpty();
-    bool hasCatalog  = !m_catalogFiles.isEmpty();
     const bool busy = m_downloadInProgress || m_service->isDownloadActive();
     m_downloadBtn->setEnabled(hasCamera && hasSelected && !busy);
     m_deleteBtn->setEnabled(hasCamera && hasSelected && !busy);
     m_folderBtn->setEnabled(!busy);
     m_refreshBtn->setEnabled(hasCamera && !busy);
-    m_exportCatalogBtn->setEnabled(hasCamera && hasCatalog);
 }
 
 void MainWindow::setStatusMessage(const QString& msg, const QString& color)

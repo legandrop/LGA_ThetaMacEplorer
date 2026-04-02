@@ -18,6 +18,7 @@
 #include <QMetaObject>
 #include <QPixmap>
 #include <QImage>
+#include <QtEndian>
 #include <CoreGraphics/CoreGraphics.h>
 #include <vector>
 
@@ -186,6 +187,34 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     return QPixmap::fromImage(img.copy());
 }
 
+static NSData* makePTPCommandData(uint16_t operationCode,
+                                  uint32_t transactionId,
+                                  std::initializer_list<uint32_t> params)
+{
+    const uint32_t length = 12u + static_cast<uint32_t>(params.size() * sizeof(uint32_t));
+    NSMutableData* data = [NSMutableData dataWithLength:length];
+    uint8_t* bytes = static_cast<uint8_t*>(data.mutableBytes);
+
+    const uint32_t leLength = qToLittleEndian(length);
+    const uint16_t leType = qToLittleEndian<uint16_t>(1); // command block
+    const uint16_t leCode = qToLittleEndian(operationCode);
+    const uint32_t leTx = qToLittleEndian(transactionId);
+
+    std::memcpy(bytes + 0, &leLength, sizeof(leLength));
+    std::memcpy(bytes + 4, &leType, sizeof(leType));
+    std::memcpy(bytes + 6, &leCode, sizeof(leCode));
+    std::memcpy(bytes + 8, &leTx, sizeof(leTx));
+
+    size_t offset = 12;
+    for (uint32_t param : params) {
+        const uint32_t leParam = qToLittleEndian(param);
+        std::memcpy(bytes + offset, &leParam, sizeof(leParam));
+        offset += sizeof(leParam);
+    }
+
+    return data;
+}
+
 // ============================================================
 // ThetaDeviceBrowserAdapter
 // ============================================================
@@ -297,6 +326,108 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     [self.camera requestCloseSession];
 }
 
+- (void)emitBatteryStatus
+{
+    if (!self.qtBridge || !self.camera) {
+        return;
+    }
+
+    const bool available = self.camera.batteryLevelAvailable;
+    const int percent = available ? (int)self.camera.batteryLevel : -1;
+    LOGD("bridge") << "Battery status:"
+                   << "available:" << available
+                   << "percent:" << percent;
+    QMetaObject::invokeMethod(self.qtBridge, "batteryLevelChanged",
+                              Qt::QueuedConnection,
+                              Q_ARG(int, percent),
+                              Q_ARG(bool, available));
+
+    if (!available) {
+        [self requestBatteryStatusViaPTPIfNeeded];
+    }
+}
+
+- (void)requestBatteryStatusViaPTPIfNeeded
+{
+    if (!self.camera || self.pendingBatteryQuery) {
+        return;
+    }
+
+    NSArray<NSString*>* capabilities = self.camera.capabilities ?: @[];
+    if (![capabilities containsObject:ICCameraDeviceCanAcceptPTPCommands]) {
+        LOGD("bridge") << "PTP battery query skipped: camera does not advertise PTP command capability";
+        return;
+    }
+
+    self.pendingBatteryQuery = YES;
+    const uint32_t txBase = ++self.ptpTransactionId;
+    NSData* batteryLevelCommand = makePTPCommandData(0x1015, txBase, {0x5001});
+    NSData* batteryStatusCommand = makePTPCommandData(0x1015, txBase + 1, {0xD80C});
+
+    LOGI("bridge") << "Requesting battery via PTP"
+                   << "tx:" << txBase
+                   << "camera:" << QString::fromNSString(self.camera.name ?: @"");
+
+    __weak typeof(self) weakSelf = self;
+    [self.camera requestSendPTPCommand:batteryLevelCommand
+                               outData:nil
+                            completion:^(NSData* responseData, NSData* ptpResponseData, NSError* error) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+
+        if (error) {
+            strongSelf.pendingBatteryQuery = NO;
+            LOGW("bridge") << "PTP battery level query failed:"
+                           << QString::fromNSString(error.localizedDescription)
+                           << "code:" << error.code;
+            return;
+        }
+
+        int percent = -1;
+        if (ptpResponseData.length >= 1) {
+            const uint8_t* bytes = static_cast<const uint8_t*>(ptpResponseData.bytes);
+            percent = static_cast<int>(bytes[0]);
+        }
+
+        LOGI("bridge") << "PTP battery level result:"
+                       << percent
+                       << "responseBytes:" << (int)responseData.length
+                       << "dataBytes:" << (int)ptpResponseData.length;
+
+        if (percent >= 0 && percent <= 100) {
+            QMetaObject::invokeMethod(strongSelf.qtBridge, "batteryLevelChanged",
+                                      Qt::QueuedConnection,
+                                      Q_ARG(int, percent),
+                                      Q_ARG(bool, true));
+        }
+
+        [strongSelf.camera requestSendPTPCommand:batteryStatusCommand
+                                         outData:nil
+                                      completion:^(NSData* statusResponse, NSData* statusData, NSError* statusError) {
+            strongSelf.pendingBatteryQuery = NO;
+
+            if (statusError) {
+                LOGW("bridge") << "PTP battery status query failed:"
+                               << QString::fromNSString(statusError.localizedDescription)
+                               << "code:" << statusError.code;
+                return;
+            }
+
+            int status = -1;
+            if (statusData.length >= 1) {
+                const uint8_t* statusBytes = static_cast<const uint8_t*>(statusData.bytes);
+                status = static_cast<int>(statusBytes[0]);
+            }
+            LOGI("bridge") << "PTP battery status result:"
+                           << status
+                           << "responseBytes:" << (int)statusResponse.length
+                           << "dataBytes:" << (int)statusData.length;
+        }];
+    }];
+}
+
 // ---- ICDeviceDelegate REQUIRED ----
 
 - (void)device:(ICDevice*)device didOpenSessionWithError:(NSError* _Nullable)error
@@ -315,6 +446,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
             LOGI("bridge") << "Download session recovery completed";
             self.recoveringDownloadSession = NO;
         }
+        [self emitBatteryStatus];
         // NOTE: do NOT call requestEnableTethering here.
         // It triggers cameraDeviceDidChangeCapability: callbacks which
         // were causing the burst-enumeration hang.
@@ -351,6 +483,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     }
     self.reopenSessionAfterClose = NO;
     self.recoveringDownloadSession = NO;
+    [self emitBatteryStatus];
     QMetaObject::invokeMethod(self.qtBridge, "cameraDisconnected",
                               Qt::QueuedConnection);
 }
@@ -409,6 +542,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 - (void)cameraDeviceDidChangeCapability:(ICCameraDevice*)camera
 {
     LOGD("bridge") << "Capability changed; scheduling enumeration";
+    [self emitBatteryStatus];
     [self scheduleEnumeration];
 }
 
@@ -427,6 +561,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 - (void)deviceDidBecomeReadyWithCompleteContentCatalog:(ICCameraDevice*)device
 {
     LOGD("bridge") << "Catalog complete; scheduling enumeration";
+    [self emitBatteryStatus];
     [self scheduleEnumeration];
 }
 
@@ -434,7 +569,21 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     didReceiveSessionOptions:(NSDictionary<NSString*,id>*)options
 {
     LOGD("bridge") << "Session options received; scheduling enumeration";
+    [self emitBatteryStatus];
     [self scheduleEnumeration];
+}
+
+- (void)deviceDidBecomeReady:(ICDevice*)device
+{
+    LOGD("bridge") << "Device became ready";
+    [self emitBatteryStatus];
+}
+
+- (void)device:(ICDevice*)device didReceiveStatusInformation:(NSDictionary<ICDeviceStatus,id>*)status
+{
+    Q_UNUSED(status);
+    LOGD("bridge") << "Device status information received";
+    [self emitBatteryStatus];
 }
 
 // Stub to suppress compiler warnings — we don't need metadata for file listing

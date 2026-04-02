@@ -24,6 +24,7 @@ ThetaCameraService::ThetaCameraService(QObject* parent)
                 m_activeDownload = PendingDownload{};
                 m_downloadActive = false;
                 m_recoveringAfterDownloadError = false;
+                emit batteryLevelChanged(-1, false);
                 emit cameraDisconnected();
             });
 
@@ -32,6 +33,9 @@ ThetaCameraService::ThetaCameraService(QObject* parent)
 
     connect(m_bridge, &ThetaBridge::thumbnailReady,
             this, &ThetaCameraService::thumbnailReady);
+
+    connect(m_bridge, &ThetaBridge::batteryLevelChanged,
+            this, &ThetaCameraService::batteryLevelChanged);
 
     connect(m_bridge, &ThetaBridge::downloadProgress,
             this, &ThetaCameraService::onBridgeDownloadProgress);
