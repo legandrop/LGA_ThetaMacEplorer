@@ -146,16 +146,120 @@ void ThetaBridge::requestDownloadFiles(const QList<CameraFileInfo>& files,
 
 void ThetaBridge::requestDeleteFiles(const QList<CameraFileInfo>& files)
 {
-    if (!d->cameraDel || !d->cameraDel.camera) return;
+    if (!d->cameraDel || !d->cameraDel.camera) {
+        LOGW("bridge") << "requestDeleteFiles: no camera";
+        return;
+    }
+
+    ICCameraDevice* camera = d->cameraDel.camera;
     NSMutableArray<ICCameraItem*>* icFiles = [NSMutableArray array];
+    QStringList fileNames;
+    QStringList filePaths;
     for (const CameraFileInfo& fi : files) {
         ICCameraFile* icFile = (__bridge ICCameraFile*)fi.nativeFileHandle;
-        if (icFile) [icFiles addObject:icFile];
+        if (icFile) {
+            [icFiles addObject:icFile];
+            fileNames << fi.name;
+            filePaths << fi.devicePath;
+        }
     }
-    if (icFiles.count > 0) {
-        [d->cameraDel.camera requestDeleteFiles:icFiles];
-        LOGD("bridge") << "requestDeleteFiles:" << (int)icFiles.count;
+    if (icFiles.count == 0) {
+        LOGW("bridge") << "requestDeleteFiles: no valid file handles";
+        return;
     }
+
+    const bool canDeleteOne = [camera.capabilities containsObject:ICCameraDeviceCanDeleteOneFile];
+    const bool canDeleteAll = [camera.capabilities containsObject:ICCameraDeviceCanDeleteAllFiles];
+    LOGI("bridge") << "requestDeleteFiles:" << (int)icFiles.count
+                   << "canDeleteOne:" << canDeleteOne
+                   << "canDeleteAll:" << canDeleteAll
+                   << "files:" << fileNames
+                   << "devicePaths:" << filePaths;
+
+    if (@available(macOS 10.15, *)) {
+        d->cameraDel.usingBlockDeleteAPI = YES;
+        ThetaBridge* weakBridge = this;
+        __weak ThetaCameraDeviceAdapter* weakDelegate = d->cameraDel;
+        d->cameraDel.activeDeleteProgress =
+            [camera requestDeleteFiles:icFiles
+                          deleteFailed:^(NSDictionary<ICDeleteError,ICCameraItem*>* failures) {
+                ThetaBridge* strongBridge = weakBridge;
+                if (!strongBridge) {
+                    return;
+                }
+
+                QStringList failureDetails;
+                for (NSString* key in failures) {
+                    ICCameraItem* item = failures[key];
+                    const QString itemName = item.name ? QString::fromNSString(item.name) : QString();
+                    const QString reason = key ? QString::fromNSString(key) : QString("UnknownDeleteError");
+                    failureDetails << QString("%1 (%2)").arg(itemName, reason);
+                }
+
+                LOGW("bridge") << "Delete failed for individual items:" << failureDetails;
+            }
+                           completion:^(NSDictionary<ICDeleteResult,NSArray<ICCameraItem*>*>* result, NSError* _Nullable error) {
+                ThetaBridge* strongBridge = weakBridge;
+                ThetaCameraDeviceAdapter* strongDelegate = weakDelegate;
+                if (!strongBridge || !strongDelegate) {
+                    return;
+                }
+
+                strongDelegate.activeDeleteProgress = nil;
+                strongDelegate.usingBlockDeleteAPI = NO;
+
+                NSArray<ICCameraItem*>* successItems = result[ICDeleteSuccessful];
+                NSArray<ICCameraItem*>* failedItems = result[ICDeleteFailed];
+                NSArray<ICCameraItem*>* canceledItems = result[ICDeleteCanceled];
+
+                QStringList successPaths;
+                for (ICCameraItem* item in successItems ?: @[]) {
+                    NSString* p = item.fileSystemPath;
+                    successPaths << (p ? QString::fromNSString(p) : QString::fromNSString(item.name ?: @""));
+                }
+
+                QStringList failedNames;
+                for (ICCameraItem* item in failedItems ?: @[]) {
+                    failedNames << QString::fromNSString(item.name ?: @"");
+                }
+
+                QStringList canceledNames;
+                for (ICCameraItem* item in canceledItems ?: @[]) {
+                    canceledNames << QString::fromNSString(item.name ?: @"");
+                }
+
+                LOGI("bridge") << "Delete completion"
+                               << "success:" << successPaths
+                               << "failed:" << failedNames
+                               << "canceled:" << canceledNames
+                               << "errorCode:" << (error ? error.code : 0)
+                               << "errorDomain:" << (error ? QString::fromNSString(error.domain ?: @"") : QString());
+
+                if (!successPaths.isEmpty()) {
+                    QMetaObject::invokeMethod(strongBridge, "deleteCompleted",
+                                              Qt::QueuedConnection,
+                                              Q_ARG(QStringList, successPaths));
+                }
+
+                if (error || !failedNames.isEmpty() || !canceledNames.isEmpty()) {
+                    QString msg;
+                    if (error) {
+                        msg = QString::fromNSString(error.localizedDescription);
+                    } else if (!failedNames.isEmpty()) {
+                        msg = QString("Failed to delete: %1").arg(failedNames.join(", "));
+                    } else {
+                        msg = QString("Delete canceled: %1").arg(canceledNames.join(", "));
+                    }
+                    QMetaObject::invokeMethod(strongBridge, "deleteError",
+                                              Qt::QueuedConnection,
+                                              Q_ARG(QString, msg));
+                }
+                           }];
+        return;
+    }
+
+    d->cameraDel.usingBlockDeleteAPI = NO;
+    [camera requestDeleteFiles:icFiles];
 }
 
 // ============================================================
@@ -732,6 +836,10 @@ static NSData* makePTPCommandData(uint16_t operationCode,
       didDeleteFiles:(NSArray<ICCameraItem*>*)deletedFiles
                error:(NSError*)error
 {
+    if (self.usingBlockDeleteAPI) {
+        return;
+    }
+
     if (error) {
         QString msg = QString::fromNSString(error.localizedDescription);
         LOGW("bridge") << "Delete error:" << msg;
@@ -748,6 +856,27 @@ static NSData* makePTPCommandData(uint16_t operationCode,
         QMetaObject::invokeMethod(self.qtBridge, "deleteCompleted",
                                   Qt::QueuedConnection,
                                   Q_ARG(QStringList, paths));
+    }
+}
+
+- (void)cameraDevice:(ICCameraDevice*)camera
+didCompleteDeleteFilesWithError:(NSError* _Nullable)error
+{
+    if (self.usingBlockDeleteAPI) {
+        return;
+    }
+
+    if (error) {
+        const QString msg = QString::fromNSString(error.localizedDescription);
+        LOGW("bridge") << "didCompleteDeleteFilesWithError:"
+                       << msg
+                       << "code:" << error.code
+                       << "domain:" << QString::fromNSString(error.domain ?: @"");
+        QMetaObject::invokeMethod(self.qtBridge, "deleteError",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QString, msg));
+    } else {
+        LOGI("bridge") << "didCompleteDeleteFilesWithError: success";
     }
 }
 

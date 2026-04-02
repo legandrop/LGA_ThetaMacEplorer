@@ -1,6 +1,7 @@
 #include "thetaexplorer/ThetaCameraService.h"
 #include "thetaexplorer/ThetaBridge.h"
 #include "thetaexplorer/Logger.h"
+#include <QSet>
 #include <QTimer>
 
 ThetaCameraService::ThetaCameraService(QObject* parent)
@@ -23,6 +24,10 @@ ThetaCameraService::ThetaCameraService(QObject* parent)
                 m_downloadQueue.clear();
                 m_activeDownload = PendingDownload{};
                 m_downloadActive = false;
+                m_deleteActive = false;
+                m_waitingForDeleteVerification = false;
+                m_pendingDeleteFiles.clear();
+                if (m_deleteTimer) m_deleteTimer->stop();
                 m_recoveringAfterDownloadError = false;
                 emit batteryLevelChanged(-1, false);
                 emit cameraDisconnected();
@@ -47,12 +52,10 @@ ThetaCameraService::ThetaCameraService(QObject* parent)
             this, &ThetaCameraService::onBridgeDownloadError);
 
     connect(m_bridge, &ThetaBridge::deleteCompleted,
-            this, &ThetaCameraService::deleteCompleted);
+            this, &ThetaCameraService::onBridgeDeleteCompleted);
 
     connect(m_bridge, &ThetaBridge::deleteError,
-            this, [this](const QString& msg) {
-                emit errorOccurred("Delete error: " + msg);
-            });
+            this, &ThetaCameraService::onBridgeDeleteError);
 
     connect(m_bridge, &ThetaBridge::cameraError,
             this, [this](const QString& msg) {
@@ -64,6 +67,11 @@ ThetaCameraService::ThetaCameraService(QObject* parent)
     m_thumbnailTimer->setInterval(60); // ms between batches
     connect(m_thumbnailTimer, &QTimer::timeout,
             this, &ThetaCameraService::drainThumbnailQueue);
+
+    m_deleteTimer = new QTimer(this);
+    m_deleteTimer->setSingleShot(true);
+    connect(m_deleteTimer, &QTimer::timeout,
+            this, &ThetaCameraService::onDeleteTimedOut);
 }
 
 ThetaCameraService::~ThetaCameraService()
@@ -83,6 +91,10 @@ void ThetaCameraService::stop()
     m_downloadQueue.clear();
     m_activeDownload = PendingDownload{};
     m_downloadActive = false;
+    m_deleteActive = false;
+    m_waitingForDeleteVerification = false;
+    m_pendingDeleteFiles.clear();
+    if (m_deleteTimer) m_deleteTimer->stop();
     m_recoveringAfterDownloadError = false;
     m_bridge->stopBrowsing();
 }
@@ -102,6 +114,44 @@ void ThetaCameraService::onFileListUpdated(const QList<CameraFileInfo>& files)
     LOGI("service") << "fileListUpdated:" << files.size() << "files";
 
     m_files = files;
+    if (m_deleteActive || m_waitingForDeleteVerification) {
+        QSet<QString> remainingPaths;
+        remainingPaths.reserve(m_files.size());
+        for (const CameraFileInfo& file : m_files) {
+            remainingPaths.insert(file.devicePath);
+        }
+
+        QStringList deletedPaths;
+        QStringList stillPresentNames;
+        for (const CameraFileInfo& file : m_pendingDeleteFiles) {
+            if (!remainingPaths.contains(file.devicePath)) {
+                deletedPaths << file.devicePath;
+            } else {
+                stillPresentNames << file.name;
+            }
+        }
+
+        if (!deletedPaths.isEmpty()) {
+            LOGI("service") << "Verified deleted files via refreshed catalog:"
+                            << deletedPaths;
+            m_deleteActive = false;
+            m_waitingForDeleteVerification = false;
+            if (m_deleteTimer) m_deleteTimer->stop();
+            m_pendingDeleteFiles.clear();
+            emit deleteCompleted(deletedPaths);
+        } else if (m_waitingForDeleteVerification) {
+            const QString detail = stillPresentNames.isEmpty()
+                ? QString("Delete verification timed out.")
+                : QString("Delete did not complete for: %1").arg(stillPresentNames.join(", "));
+            LOGW("service") << detail;
+            m_deleteActive = false;
+            m_waitingForDeleteVerification = false;
+            if (m_deleteTimer) m_deleteTimer->stop();
+            m_pendingDeleteFiles.clear();
+            emit errorOccurred("Delete error: " + detail);
+        }
+    }
+
     if (m_recoveringAfterDownloadError) {
         LOGI("service") << "Catalog refreshed during download recovery";
         QTimer::singleShot(250, this, &ThetaCameraService::resumeAfterRecovery);
@@ -159,6 +209,18 @@ void ThetaCameraService::downloadFiles(const QList<CameraFileInfo>& files,
 
 void ThetaCameraService::deleteFiles(const QList<CameraFileInfo>& files)
 {
+    m_pendingDeleteFiles = files;
+    m_deleteActive = !files.isEmpty();
+    m_waitingForDeleteVerification = false;
+    if (m_deleteTimer) {
+        m_deleteTimer->start(m_deleteTimeoutMs);
+    }
+    QStringList names;
+    for (const CameraFileInfo& file : files) {
+        names << file.name;
+    }
+    LOGI("service") << "Delete requested for" << files.size()
+                    << "file(s):" << names;
     m_bridge->requestDeleteFiles(files);
 }
 
@@ -253,4 +315,45 @@ void ThetaCameraService::kickNextDownload()
                     << "attempt:" << m_activeDownload.attempt
                     << "remaining queue:" << m_downloadQueue.size();
     m_bridge->requestDownloadFile(m_activeDownload.file, m_activeDownload.destinationPath);
+}
+
+void ThetaCameraService::onBridgeDeleteCompleted(const QStringList& deletedPaths)
+{
+    if (m_deleteTimer) m_deleteTimer->stop();
+    m_deleteActive = false;
+    m_waitingForDeleteVerification = false;
+    m_pendingDeleteFiles.clear();
+    LOGI("service") << "Delete completed for paths:" << deletedPaths;
+    emit deleteCompleted(deletedPaths);
+}
+
+void ThetaCameraService::onBridgeDeleteError(const QString& errorMessage)
+{
+    if (m_deleteTimer) m_deleteTimer->stop();
+    m_deleteActive = false;
+    m_waitingForDeleteVerification = false;
+    QStringList names;
+    for (const CameraFileInfo& file : m_pendingDeleteFiles) {
+        names << file.name;
+    }
+    LOGW("service") << "Delete failed for files:" << names
+                    << "message:" << errorMessage;
+    m_pendingDeleteFiles.clear();
+    emit errorOccurred("Delete error: " + errorMessage);
+}
+
+void ThetaCameraService::onDeleteTimedOut()
+{
+    if (!m_deleteActive || m_pendingDeleteFiles.isEmpty()) {
+        return;
+    }
+
+    QStringList names;
+    for (const CameraFileInfo& file : m_pendingDeleteFiles) {
+        names << file.name;
+    }
+    LOGW("service") << "Delete request timed out; refreshing catalog to verify result for:"
+                    << names;
+    m_waitingForDeleteVerification = true;
+    m_bridge->refreshCatalog();
 }

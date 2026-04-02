@@ -20,7 +20,9 @@ int main(int argc, char* argv[])
     app.setApplicationVersion("1.0.0");
     app.setOrganizationName("LGA");
     app.setOrganizationDomain("lga.com");
+#ifndef Q_OS_MAC
     app.setWindowIcon(QIcon(":/icons/thetaexplorer_logo.svg"));
+#endif
 
     LOGI("app") << "ThetaMacExplorer started at"
                 << QDateTime::currentDateTime().toString()
