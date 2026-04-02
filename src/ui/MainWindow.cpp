@@ -145,8 +145,6 @@ void MainWindow::setupUI()
     // Camera status indicator
     m_logoLabel = new QLabel(this);
     m_logoLabel->setFixedSize(24, 24);
-    m_logoLabel->setPixmap(QPixmap(":/icons/thetaexplorer_logo.svg").scaled(
-        24, 24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     m_cameraLabel = new QLabel("⬤  No camera connected", this);
     m_cameraLabel->setStyleSheet("color: #444444; font-size: 13px;");
