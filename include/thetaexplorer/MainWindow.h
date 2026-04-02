@@ -14,6 +14,7 @@ class ThetaCameraService;
 class ThumbnailGridWidget;
 class PreviewPanel;
 class FileMetadataPanel;
+class QTimer;
 
 class MainWindow : public QMainWindow
 {
@@ -76,6 +77,7 @@ protected:
     QPushButton*         m_deleteBtn      = nullptr;
     QProgressBar*        m_progressBar    = nullptr;
     QLabel*              m_progressLabel  = nullptr;
+    bool                 m_downloadHasDeterminateProgress = false;
 
     // Status bar label
     QLabel*              m_statusLabel    = nullptr;
