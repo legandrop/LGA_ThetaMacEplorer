@@ -297,9 +297,10 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
                  error:(NSError* _Nullable)error
 {
     if (!thumbnail || error) {
-        if (error)
+        if (error) {
             LOGW("bridge") << "Thumbnail error for" << QString::fromNSString(item.name)
                        << ":" << QString::fromNSString(error.localizedDescription);
+        }
         return;
     }
     QPixmap pixmap = cgImageToQPixmap(thumbnail);
