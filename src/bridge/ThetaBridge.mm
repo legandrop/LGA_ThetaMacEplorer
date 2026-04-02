@@ -14,8 +14,8 @@
 // 300 ms into the future.  The burst collapses into a single enumeration.
 
 #import "ThetaBridgePrivate.h"
+#include "thetaexplorer/Logger.h"
 #include <QMetaObject>
-#include <QDebug>
 #include <QPixmap>
 #include <QImage>
 #include <CoreGraphics/CoreGraphics.h>
@@ -57,7 +57,7 @@ void ThetaBridge::startBrowsing()
     d->browser.browsedDeviceTypeMask =
         (ICDeviceTypeMask)(ICDeviceTypeMaskCamera | ICDeviceLocationTypeMaskLocal);
     [d->browser start];
-    qDebug() << "[ThetaBridge] startBrowsing";
+    LOGI("bridge") << "startBrowsing";
 }
 
 void ThetaBridge::stopBrowsing()
@@ -80,7 +80,7 @@ void ThetaBridge::requestDownloadFiles(const QList<CameraFileInfo>& files,
                                         const QString& destinationPath)
 {
     if (!d->cameraDel || !d->cameraDel.camera) {
-        qWarning() << "[ThetaBridge] requestDownloadFiles: no camera";
+        LOGW("bridge") << "requestDownloadFiles: no camera";
         return;
     }
     ICCameraDevice* cam = d->cameraDel.camera;
@@ -99,7 +99,7 @@ void ThetaBridge::requestDownloadFiles(const QList<CameraFileInfo>& files,
                 downloadDelegate:d->cameraDel
              didDownloadSelector:@selector(didDownloadFile:error:options:contextInfo:)
                      contextInfo:NULL];
-        qDebug() << "[ThetaBridge] Queued download:" << fi.name;
+        LOGD("bridge") << "Queued download:" << fi.name;
     }
 }
 
@@ -113,7 +113,7 @@ void ThetaBridge::requestDeleteFiles(const QList<CameraFileInfo>& files)
     }
     if (icFiles.count > 0) {
         [d->cameraDel.camera requestDeleteFiles:icFiles];
-        qDebug() << "[ThetaBridge] requestDeleteFiles:" << (int)icFiles.count;
+        LOGD("bridge") << "requestDeleteFiles:" << (int)icFiles.count;
     }
 }
 
@@ -157,13 +157,13 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 {
     NSString* devName = addedDevice.name ?: @"(unnamed)";
     NSString* devType = NSStringFromClass([addedDevice class]);
-    qDebug() << "[Bridge] Device found:"
+    LOGD("bridge") << "Device found:"
              << QString::fromNSString(devName)
              << "class:" << QString::fromNSString(devType)
              << "moreComing:" << moreComing;
 
     if (![addedDevice isKindOfClass:[ICCameraDevice class]]) {
-        qDebug() << "[Bridge]   → not an ICCameraDevice, skipping";
+        LOGD("bridge") << "not an ICCameraDevice, skipping";
         return;
     }
 
@@ -177,12 +177,12 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
                    [upperName containsString:@"RICOH"];
 
     if (!isTheta) {
-        qDebug() << "[Bridge]   → not a Ricoh Theta (name='"
-                 << QString::fromNSString(devName) << "'), skipping";
+        LOGD("bridge") << "not a Ricoh Theta (name="
+                       << QString::fromNSString(devName) << "), skipping";
         return;
     }
 
-    qDebug() << "[Bridge]   → Ricoh Theta identified! Connecting...";
+    LOGI("bridge") << "Ricoh Theta identified. Connecting...";
 
     ThetaCameraDeviceAdapter* camDel = [[ThetaCameraDeviceAdapter alloc] init];
     camDel.qtBridge = self.qtBridge;
@@ -202,14 +202,14 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
       didRemoveDevice:(ICDevice*)device
             moreGoing:(BOOL)moreGoing
 {
-    qDebug() << "[Bridge] Camera removed";
+    LOGI("bridge") << "Camera removed";
     QMetaObject::invokeMethod(self.qtBridge, "cameraDisconnected",
                               Qt::QueuedConnection);
 }
 
 - (void)deviceBrowserDidEnumerateLocalDevices:(ICDeviceBrowser*)browser
 {
-    qDebug() << "[Bridge] Local device enumeration complete";
+    LOGD("bridge") << "Local device enumeration complete";
 }
 
 @end
@@ -244,13 +244,13 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 - (void)device:(ICDevice*)device didOpenSessionWithError:(NSError* _Nullable)error
 {
     if (error) {
-        qWarning() << "[Bridge] Session open error:"
+        LOGW("bridge") << "Session open error:"
                    << QString::fromNSString(error.localizedDescription);
         QMetaObject::invokeMethod(self.qtBridge, "cameraError",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, QString::fromNSString(error.localizedDescription)));
     } else {
-        qDebug() << "[Bridge] Session opened OK — scheduling enumeration";
+        LOGI("bridge") << "Session opened OK; scheduling enumeration";
         // NOTE: do NOT call requestEnableTethering here.
         // It triggers cameraDeviceDidChangeCapability: callbacks which
         // were causing the burst-enumeration hang.
@@ -260,7 +260,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 
 - (void)device:(ICDevice*)device didCloseSessionWithError:(NSError* _Nullable)error
 {
-    qDebug() << "[Bridge] Session closed";
+    LOGI("bridge") << "Session closed";
     if (self.pendingEnumeration) {
         dispatch_block_cancel(self.pendingEnumeration);
         self.pendingEnumeration = nil;
@@ -269,7 +269,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 
 - (void)didRemoveDevice:(ICDevice*)device
 {
-    qDebug() << "[Bridge] Device removed";
+    LOGI("bridge") << "Device removed";
     if (self.pendingEnumeration) {
         dispatch_block_cancel(self.pendingEnumeration);
         self.pendingEnumeration = nil;
@@ -283,7 +283,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 - (void)device:(ICDevice*)device didEncounterError:(NSError*)error
 {
     QString msg = QString::fromNSString(error.localizedDescription);
-    qWarning() << "[Bridge] Device error:" << msg;
+    LOGW("bridge") << "Device error:" << msg;
     QMetaObject::invokeMethod(self.qtBridge, "cameraError",
                               Qt::QueuedConnection,
                               Q_ARG(QString, msg));
@@ -298,7 +298,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 {
     if (!thumbnail || error) {
         if (error)
-            qWarning() << "[Bridge] Thumbnail error for" << QString::fromNSString(item.name)
+            LOGW("bridge") << "Thumbnail error for" << QString::fromNSString(item.name)
                        << ":" << QString::fromNSString(error.localizedDescription);
         return;
     }
@@ -317,7 +317,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 
 - (void)cameraDevice:(ICCameraDevice*)camera didRenameItems:(NSArray<ICCameraItem*>*)items
 {
-    qDebug() << "[Bridge] Items renamed";
+    LOGD("bridge") << "Items renamed";
     [self scheduleEnumeration];
 }
 
@@ -330,32 +330,32 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 
 - (void)cameraDeviceDidChangeCapability:(ICCameraDevice*)camera
 {
-    qDebug() << "[Bridge] Capability changed → scheduling enumeration";
+    LOGD("bridge") << "Capability changed; scheduling enumeration";
     [self scheduleEnumeration];
 }
 
 - (void)cameraDevice:(ICCameraDevice*)camera didAddItems:(NSArray<ICCameraItem*>*)items
 {
-    qDebug() << "[Bridge] Items added:" << (int)items.count << "→ scheduling enumeration";
+    LOGD("bridge") << "Items added:" << (int)items.count << "; scheduling enumeration";
     [self scheduleEnumeration];
 }
 
 - (void)cameraDevice:(ICCameraDevice*)camera didRemoveItems:(NSArray<ICCameraItem*>*)items
 {
-    qDebug() << "[Bridge] Items removed:" << (int)items.count;
+    LOGD("bridge") << "Items removed:" << (int)items.count;
     [self scheduleEnumeration];
 }
 
 - (void)deviceDidBecomeReadyWithCompleteContentCatalog:(ICCameraDevice*)device
 {
-    qDebug() << "[Bridge] Catalog complete → scheduling enumeration";
+    LOGD("bridge") << "Catalog complete; scheduling enumeration";
     [self scheduleEnumeration];
 }
 
 - (void)cameraDevice:(ICCameraDevice*)camera
     didReceiveSessionOptions:(NSDictionary<NSString*,id>*)options
 {
-    qDebug() << "[Bridge] Session options received → scheduling enumeration";
+    LOGD("bridge") << "Session options received; scheduling enumeration";
     [self scheduleEnumeration];
 }
 
@@ -432,7 +432,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
         fileList.append(info);
     }
 
-    qDebug() << "[Bridge] enumerateFiles → emitting" << fileList.size() << "files";
+    LOGI("bridge") << "enumerateFiles emitting" << fileList.size() << "files";
     QMetaObject::invokeMethod(self.qtBridge, "fileListUpdated",
                               Qt::QueuedConnection,
                               Q_ARG(QList<CameraFileInfo>, fileList));
@@ -463,7 +463,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     QString name = QString::fromNSString(file.name);
     if (error) {
         QString msg = QString::fromNSString(error.localizedDescription);
-        qWarning() << "[Bridge] Download error" << name << ":" << msg;
+        LOGW("bridge") << "Download error" << name << ":" << msg;
         QMetaObject::invokeMethod(self.qtBridge, "downloadError",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, name),
@@ -471,7 +471,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
     } else {
         NSString* savedName = options ? options[ICSavedFilename] : nil;
         QString savedPath   = savedName ? QString::fromNSString(savedName) : QString();
-        qDebug() << "[Bridge] Downloaded:" << name << "→" << savedPath;
+        LOGI("bridge") << "Downloaded:" << name << "->" << savedPath;
         QMetaObject::invokeMethod(self.qtBridge, "downloadFileCompleted",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, name),
@@ -487,7 +487,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
 {
     if (error) {
         QString msg = QString::fromNSString(error.localizedDescription);
-        qWarning() << "[Bridge] Delete error:" << msg;
+        LOGW("bridge") << "Delete error:" << msg;
         QMetaObject::invokeMethod(self.qtBridge, "deleteError",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, msg));
@@ -497,7 +497,7 @@ static QPixmap cgImageToQPixmap(CGImageRef cgImg)
             NSString* p = item.fileSystemPath;
             paths << (p ? QString::fromNSString(p) : QString::fromNSString(item.name));
         }
-        qDebug() << "[Bridge] Deleted:" << paths;
+        LOGI("bridge") << "Deleted:" << paths;
         QMetaObject::invokeMethod(self.qtBridge, "deleteCompleted",
                                   Qt::QueuedConnection,
                                   Q_ARG(QStringList, paths));

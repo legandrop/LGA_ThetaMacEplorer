@@ -7,6 +7,7 @@
 #include "thetaexplorer/CameraCatalogDebugExporter.h"
 #include "thetaexplorer/ConfirmDeleteDialog.h"
 #include "thetaexplorer/ColorUtils.h"
+#include "thetaexplorer/Logger.h"
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
@@ -22,6 +23,53 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QScrollBar>
+
+namespace {
+
+QString chooseDirectoryNonNative(QWidget* parent,
+                                 const QString& title,
+                                 const QString& initialDir)
+{
+    QFileDialog dialog(parent, title, initialDir);
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setOption(QFileDialog::ShowDirsOnly, true);
+    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    dialog.setAcceptMode(QFileDialog::AcceptOpen);
+    dialog.setModal(true);
+    dialog.raise();
+    dialog.activateWindow();
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return QString();
+    }
+
+    const QStringList selected = dialog.selectedFiles();
+    return selected.isEmpty() ? QString() : selected.first();
+}
+
+QString chooseSaveFileNonNative(QWidget* parent,
+                                const QString& title,
+                                const QString& initialPath,
+                                const QString& filter)
+{
+    QFileDialog dialog(parent, title, initialPath, filter);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    dialog.setModal(true);
+    dialog.selectFile(initialPath);
+    dialog.raise();
+    dialog.activateWindow();
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return QString();
+    }
+
+    const QStringList selected = dialog.selectedFiles();
+    return selected.isEmpty() ? QString() : selected.first();
+}
+
+} // namespace
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -354,31 +402,42 @@ void MainWindow::onDeleteClicked()
 
 void MainWindow::onBrowseFolderClicked()
 {
-    QString chosen = QFileDialog::getExistingDirectory(
-        this, "Choose download folder",
-        m_downloadFolder,
-        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    LOGD("ui") << "Browse folder clicked. currentFolder=" << m_downloadFolder;
+
+    const QString chosen = chooseDirectoryNonNative(
+        this,
+        "Choose download folder",
+        m_downloadFolder
     );
+
     if (!chosen.isEmpty()) {
         m_downloadFolder = chosen;
+        LOGI("ui") << "Browse folder selected:" << m_downloadFolder;
+    } else {
+        LOGD("ui") << "Browse folder canceled by user";
     }
 }
 
 void MainWindow::onExportCatalogClicked()
 {
+    LOGD("ui") << "Export catalog clicked. catalogFiles=" << m_catalogFiles.size();
+
     if (m_catalogFiles.isEmpty()) {
+        LOGW("ui") << "Export catalog aborted: no catalog loaded";
         QMessageBox::information(this, "Export catalog", "No camera catalog is loaded yet.");
         return;
     }
 
     QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
         + "/ThetaMacExplorer/CatalogDumps";
-    QDir().mkpath(defaultDir);
+    if (!QDir().mkpath(defaultDir)) {
+        LOGW("ui") << "Export catalog: could not ensure default dir" << defaultDir;
+    }
 
     const QString defaultName = QString("theta-catalog-%1.json")
         .arg(QDateTime::currentDateTime().toString("yyyyMMdd-hhmmss"));
 
-    const QString outputPath = QFileDialog::getSaveFileName(
+    const QString outputPath = chooseSaveFileNonNative(
         this,
         "Export camera catalog",
         defaultDir + "/" + defaultName,
@@ -386,16 +445,21 @@ void MainWindow::onExportCatalogClicked()
     );
 
     if (outputPath.isEmpty()) {
+        LOGD("ui") << "Export catalog canceled by user";
         return;
     }
 
+    LOGI("ui") << "Export catalog target path:" << outputPath;
+
     QString errorMessage;
     if (!CameraCatalogDebugExporter::exportCatalog(m_catalogFiles, outputPath, &errorMessage)) {
+        LOGW("ui") << "Export catalog failed:" << errorMessage;
         QMessageBox::warning(this, "Export catalog", errorMessage);
         setStatusMessage("Catalog export failed: " + errorMessage, ColorUtils::ERROR_COLOR);
         return;
     }
 
+    LOGI("ui") << "Export catalog completed:" << outputPath;
     setStatusMessage(
         QString("Camera catalog exported to %1").arg(outputPath),
         ColorUtils::SUCCESS
@@ -436,7 +500,7 @@ void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString&
             ColorUtils::SUCCESS
         );
     }
-    qDebug() << "Downloaded:" << fileName << "->" << path;
+    LOGD("ui") << "Downloaded:" << fileName << "->" << path;
 }
 
 void MainWindow::onDownloadError(const QString& fileName, const QString& error)
@@ -467,7 +531,7 @@ void MainWindow::onDeleteCompleted(const QStringList& deletedPaths)
 
 void MainWindow::onErrorOccurred(const QString& message)
 {
-    qWarning() << "[MainWindow] Error:" << message;
+    LOGW("ui") << "Error:" << message;
     setStatusMessage(message, ColorUtils::ERROR_COLOR);
     updateButtonStates();
     m_progressBar->hide();

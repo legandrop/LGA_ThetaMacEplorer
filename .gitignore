@@ -1,3 +1,19 @@
-.ds
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build output
 build/
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled objects
+*.o
+*.d
+*.dylib
