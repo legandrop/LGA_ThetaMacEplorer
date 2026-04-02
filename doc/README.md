@@ -13,7 +13,6 @@ Este directorio centraliza la documentacion funcional y tecnica del proyecto.
 - `implementation-plan.md`
   Baja la propuesta a fases concretas de implementacion para evitar mezclar refactor, heuristica y cambios de UX en un mismo paso.
 
-- `real-catalog-export.md`
   Explica la herramienta de exportacion de catalogo real desde la app para calibrar la deteccion HDR sobre datos de la Z1 y no sobre supuestos.
 
 - `logging.md`

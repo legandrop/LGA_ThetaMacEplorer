@@ -44,6 +44,7 @@ signals:
     void downloadProgress(const QString& fileName, int percentComplete);
     void downloadFileCompleted(const QString& fileName, const QString& savedPath);
     void downloadError(const QString& fileName, const QString& errorMessage);
+    void batteryLevelChanged(int percent, bool available);
 
     // Delete
     void deleteCompleted(const QStringList& deletedPaths);

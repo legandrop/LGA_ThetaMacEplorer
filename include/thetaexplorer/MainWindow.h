@@ -32,12 +32,12 @@ private slots:
     void onDeleteClicked();
     void onBrowseFolderClicked();
     void onRefreshClicked();
-    void onExportCatalogClicked();
     void onDownloadProgress(const QString& fileName, int percent);
     void onDownloadFileCompleted(const QString& fileName, const QString& path);
     void onDownloadError(const QString& fileName, const QString& error);
     void onDeleteCompleted(const QStringList& deletedPaths);
     void onErrorOccurred(const QString& message);
+    void onBatteryLevelChanged(int percent, bool available);
 
 private:
     void setupUI();
@@ -72,9 +72,9 @@ protected:
     QWidget*             m_toolbar        = nullptr;
     QLabel*              m_logoLabel      = nullptr;
     QLabel*              m_cameraLabel    = nullptr;
+    QLabel*              m_batteryLabel   = nullptr;
     QPushButton*         m_folderBtn      = nullptr;
     QPushButton*         m_refreshBtn     = nullptr;
-    QPushButton*         m_exportCatalogBtn = nullptr;
     QLabel*              m_folderLabel    = nullptr;
     QPushButton*         m_downloadBtn    = nullptr;
     QPushButton*         m_deleteBtn      = nullptr;

@@ -24,8 +24,12 @@
 @property (nonatomic, copy)   dispatch_block_t pendingEnumeration;
 @property (nonatomic, assign) BOOL reopenSessionAfterClose;
 @property (nonatomic, assign) BOOL recoveringDownloadSession;
+@property (nonatomic, assign) BOOL pendingBatteryQuery;
+@property (nonatomic, assign) uint32_t ptpTransactionId;
 
 - (void)scheduleEnumeration;  // debounced entry point
 - (void)enumerateFiles;        // actual work, runs on main queue after debounce
 - (void)recoverSessionForDownloads;
+- (void)emitBatteryStatus;
+- (void)requestBatteryStatusViaPTPIfNeeded;
 @end

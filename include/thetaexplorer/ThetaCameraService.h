@@ -30,6 +30,7 @@ public:
 signals:
     void cameraConnected(const QString& name);
     void cameraDisconnected();
+    void batteryLevelChanged(int percent, bool available);
     void fileListReady(const QList<CameraFileInfo>& files);
     void thumbnailReady(const QString& devicePath, const QPixmap& thumbnail);
     void downloadProgress(const QString& fileName, int percent);

@@ -60,7 +60,6 @@ set(SOURCES
     src/ui/FileMetadataPanel.cpp
     src/ui/ConfirmDeleteDialog.cpp
     src/utils/Logger.cpp
-    src/utils/CameraCatalogDebugExporter.cpp
     src/utils/ColorUtils.cpp
 )
 
@@ -89,7 +88,6 @@ set(HEADERS
     include/thetaexplorer/DownloadManager.h
     include/thetaexplorer/ConfirmDeleteDialog.h
     include/thetaexplorer/Logger.h
-    include/thetaexplorer/CameraCatalogDebugExporter.h
 )
 
 set(RESOURCES resources/resources.qrc)
