@@ -2,51 +2,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
 
   <!--
-    ThetaExplorer — ícono propuesto
-    Forma: símbolo θ (Theta) — círculo anular + barra horizontal
-    Técnica: aberración cromática CMYK (misma que PipeSync / FileManager)
-      Cyan   (#00aeef) offset arriba       → (0, -16)
-      Magenta(#ec008c) offset abajo-izq    → (-14, +8)
-      Yellow (#fff200) offset abajo-der    → (+14, +8)
-      Donde C+M+Y se superponen → negro
-      Donde C+M → índigo  |  C+Y → verde  |  M+Y → rojo
-    Dimensiones base:
-      Outer radius : 210  (center 256,256)
-      Inner radius : 166  (grosor del anillo = 44 px)
-      Barra        : y 234–278 (44 px alto), x 46–466
+    ThetaExplorer — ícono
+    Fondo: cuadrado redondeado oscuro (#141414) — mismo estilo que PipeSync/FileManager
+    Forma: símbolo θ — anillo (outer r=185, inner r=141, grosor=44px) + barra horizontal
+    Técnica CMY — offsets triangulares:
+      Cyan   (0, -16)   arriba
+      Magenta(-14, +8)  abajo-izquierda
+      Yellow (+14, +8)  abajo-derecha
+    Método: base blanca solo en el área del anillo (unión de las 3 capas),
+            luego cada capa CMY con mix-blend-mode:multiply encima.
+            El interior del anillo y el exterior son transparentes → muestra el fondo oscuro.
   -->
 
-  <!-- Fondo blanco necesario para que multiply funcione correctamente -->
-  <rect width="512" height="512" fill="white"/>
+  <!-- Fondo oscuro redondeado -->
+  <rect width="512" height="512" rx="112" ry="112" fill="#1b1b1d"/>
 
-  <!--
-    Cada capa tiene su propio mix-blend-mode: multiply.
-    Así cada color mezcla sustractivamente contra el compuesto debajo de él.
-    (El error anterior: el multiply estaba en el grupo padre → mezclaba el
-     conjunto entero contra el fondo, en vez de mezclar las capas entre sí.)
-  -->
+  <!-- Base blanca: unión de los 3 anillos offset, para que multiply tenga sobre qué trabajar -->
+  <g fill="white">
+    <path fill-rule="evenodd" transform="translate(0,-16)"
+      d="M256,71 A185,185 0 1,0 256,441 A185,185 0 1,0 256,71 Z
+         M256,115 A141,141 0 1,1 256,397 A141,141 0 1,1 256,115 Z"/>
+    <rect transform="translate(0,-16)"   x="71" y="234" width="370" height="44"/>
 
-  <!-- Placa Cyan — desplazada hacia arriba -->
+    <path fill-rule="evenodd" transform="translate(-14,8)"
+      d="M256,71 A185,185 0 1,0 256,441 A185,185 0 1,0 256,71 Z
+         M256,115 A141,141 0 1,1 256,397 A141,141 0 1,1 256,115 Z"/>
+    <rect transform="translate(-14,8)"   x="71" y="234" width="370" height="44"/>
+
+    <path fill-rule="evenodd" transform="translate(14,8)"
+      d="M256,71 A185,185 0 1,0 256,441 A185,185 0 1,0 256,71 Z
+         M256,115 A141,141 0 1,1 256,397 A141,141 0 1,1 256,115 Z"/>
+    <rect transform="translate(14,8)"    x="71" y="234" width="370" height="44"/>
+  </g>
+
+  <!-- Placa Cyan — arriba -->
   <g transform="translate(0,-16)" style="mix-blend-mode: multiply" fill="#00aeef">
-    <path fill-rule="evenodd" d="
-      M 256,46  A 210,210 0 1,0 256,466 A 210,210 0 1,0 256,46  Z
-      M 256,90  A 166,166 0 1,1 256,422 A 166,166 0 1,1 256,90  Z"/>
-    <rect x="46" y="234" width="420" height="44"/>
+    <path fill-rule="evenodd"
+      d="M256,71 A185,185 0 1,0 256,441 A185,185 0 1,0 256,71 Z
+         M256,115 A141,141 0 1,1 256,397 A141,141 0 1,1 256,115 Z"/>
+    <rect x="71" y="234" width="370" height="44"/>
   </g>
 
-  <!-- Placa Magenta — desplazada abajo-izquierda -->
+  <!-- Placa Magenta — abajo-izquierda -->
   <g transform="translate(-14,8)" style="mix-blend-mode: multiply" fill="#ec008c">
-    <path fill-rule="evenodd" d="
-      M 256,46  A 210,210 0 1,0 256,466 A 210,210 0 1,0 256,46  Z
-      M 256,90  A 166,166 0 1,1 256,422 A 166,166 0 1,1 256,90  Z"/>
-    <rect x="46" y="234" width="420" height="44"/>
+    <path fill-rule="evenodd"
+      d="M256,71 A185,185 0 1,0 256,441 A185,185 0 1,0 256,71 Z
+         M256,115 A141,141 0 1,1 256,397 A141,141 0 1,1 256,115 Z"/>
+    <rect x="71" y="234" width="370" height="44"/>
   </g>
 
-  <!-- Placa Yellow — desplazada abajo-derecha -->
+  <!-- Placa Yellow — abajo-derecha -->
   <g transform="translate(14,8)" style="mix-blend-mode: multiply" fill="#fff200">
-    <path fill-rule="evenodd" d="
-      M 256,46  A 210,210 0 1,0 256,466 A 210,210 0 1,0 256,46  Z
-      M 256,90  A 166,166 0 1,1 256,422 A 166,166 0 1,1 256,90  Z"/>
-    <rect x="46" y="234" width="420" height="44"/>
+    <path fill-rule="evenodd"
+      d="M256,71 A185,185 0 1,0 256,441 A185,185 0 1,0 256,71 Z
+         M256,115 A141,141 0 1,1 256,397 A141,141 0 1,1 256,115 Z"/>
+    <rect x="71" y="234" width="370" height="44"/>
   </g>
+
 </svg>
