@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/thetaexplorer_logo.svg</file>
         <file>styles/dark_theme.qss</file>
     </qresource>
 </RCC>
