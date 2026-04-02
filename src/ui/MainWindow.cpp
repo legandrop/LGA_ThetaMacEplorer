@@ -23,6 +23,7 @@
 #include <QStatusBar>
 #include <QSettings>
 #include <QFileInfo>
+#include <QFileInfoList>
 #include <QRegularExpression>
 #include <QIcon>
 #include <QPixmap>
@@ -73,6 +74,40 @@ QString chooseSaveFileNonNative(QWidget* parent,
 
     const QStringList selected = dialog.selectedFiles();
     return selected.isEmpty() ? QString() : selected.first();
+}
+
+} // namespace
+
+namespace {
+
+QString findMatchingLocalFilePath(const QString& folderPath, const QString& expectedName)
+{
+    const QString exactPath = QDir(folderPath).filePath(expectedName);
+    if (QFileInfo::exists(exactPath)) {
+        return exactPath;
+    }
+
+    const QFileInfo expectedInfo(expectedName);
+    const QString base = expectedInfo.completeBaseName();
+    const QString suffix = expectedInfo.suffix();
+    QDir dir(folderPath);
+    const QStringList candidates = dir.entryList(
+        QStringList()
+            << QString("%1 *.%2").arg(base, suffix)
+            << QString("%1.%2").arg(base, suffix),
+        QDir::Files,
+        QDir::Name
+    );
+
+    for (const QString& candidate : candidates) {
+        const QFileInfo fi(candidate);
+        const QString candidateBase = fi.completeBaseName();
+        if (candidateBase == base || candidateBase.startsWith(base + " ")) {
+            return dir.filePath(candidate);
+        }
+    }
+
+    return QString();
 }
 
 } // namespace
@@ -375,19 +410,37 @@ QList<CameraFileInfo> MainWindow::selectedFilesFlattened() const
 void MainWindow::refreshDownloadedStatus()
 {
     for (MediaAssetGroup& group : m_catalogGroups) {
-        const QString folderPath = groupDownloadFolderPath(group);
-        int found = 0;
-        for (const CameraFileInfo& file : group.files) {
-            const QString expectedPath = QDir(folderPath).filePath(file.name);
-            if (QFileInfo::exists(expectedPath)) {
-                ++found;
-            }
-        }
-        group.downloadedFileCount = found;
-        group.allFilesDownloaded = !group.files.isEmpty() && found == group.files.size();
+        updateGroupLocalStatus(group);
     }
 
     m_gridWidget->setGroups(m_catalogGroups);
+}
+
+void MainWindow::updateGroupLocalStatus(MediaAssetGroup& group) const
+{
+    const QString folderPath = groupDownloadFolderPath(group);
+    int found = 0;
+    int exactSizeMatches = 0;
+
+    for (const CameraFileInfo& file : group.files) {
+        const QString matchedPath = findMatchingLocalFilePath(folderPath, file.name);
+        if (matchedPath.isEmpty()) {
+            continue;
+        }
+        ++found;
+
+        const QFileInfo localInfo(matchedPath);
+        if (file.sizeBytes > 0 && localInfo.exists() && localInfo.size() == file.sizeBytes) {
+            ++exactSizeMatches;
+        }
+    }
+
+    group.downloadedFileCount = found;
+    group.allFilesDownloaded = !group.files.isEmpty()
+        && found == group.files.size()
+        && exactSizeMatches == group.files.size();
+    group.hasPartialLocalContent = !group.allFilesDownloaded
+        && (found > 0 || QFileInfo::exists(folderPath));
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -475,7 +528,56 @@ void MainWindow::onDownloadClicked()
     // Ensure download folder exists
     QDir().mkpath(m_downloadFolder);
 
+    QList<MediaAssetGroup> groupsToReplace;
+    QList<MediaAssetGroup> groupsToSkip;
+    for (MediaAssetGroup group : m_selectedGroups) {
+        updateGroupLocalStatus(group);
+        if (group.allFilesDownloaded || group.hasPartialLocalContent) {
+            groupsToReplace.append(group);
+        }
+    }
+
+    QMessageBox::StandardButton overwriteChoice = QMessageBox::NoButton;
+    if (!groupsToReplace.isEmpty()) {
+        QMessageBox msgBox(this);
+        msgBox.setIcon(QMessageBox::Question);
+        msgBox.setWindowTitle("Existing local files");
+        msgBox.setText(QString("%1 selected item%2 already exist locally, completely or partially.")
+            .arg(groupsToReplace.size())
+            .arg(groupsToReplace.size() != 1 ? "s" : ""));
+        msgBox.setInformativeText("Replace the whole local set/file before downloading again?");
+        QPushButton* replaceBtn = msgBox.addButton("Replace Existing", QMessageBox::AcceptRole);
+        QPushButton* skipBtn = msgBox.addButton("Skip Existing", QMessageBox::DestructiveRole);
+        msgBox.addButton(QMessageBox::Cancel);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == replaceBtn) {
+            overwriteChoice = QMessageBox::Yes;
+        } else if (msgBox.clickedButton() == skipBtn) {
+            overwriteChoice = QMessageBox::No;
+        } else {
+            return;
+        }
+    }
+
     QList<CameraFileInfo> filesToDownload = selectedFilesFlattened();
+    if (overwriteChoice == QMessageBox::No) {
+        filesToDownload.clear();
+        for (MediaAssetGroup group : m_selectedGroups) {
+            updateGroupLocalStatus(group);
+            if (!group.allFilesDownloaded && !group.hasPartialLocalContent) {
+                filesToDownload.append(group.files);
+            }
+        }
+        if (filesToDownload.isEmpty()) {
+            setStatusMessage("Nothing to download. All selected items already exist locally.", ColorUtils::TEXT_DIM);
+            return;
+        }
+    } else if (overwriteChoice == QMessageBox::Yes) {
+        for (const MediaAssetGroup& group : groupsToReplace) {
+            QDir(groupDownloadFolderPath(group)).removeRecursively();
+        }
+    }
 
     m_downloadTotal = filesToDownload.size();
     m_downloadDone  = 0;

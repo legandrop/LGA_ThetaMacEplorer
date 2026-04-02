@@ -46,6 +46,7 @@ private:
     void saveSettings() const;
     void updateFolderLabel();
     void refreshDownloadedStatus();
+    void updateGroupLocalStatus(MediaAssetGroup& group) const;
     QString groupDownloadFolderName(const MediaAssetGroup& group) const;
     QString groupDownloadFolderPath(const MediaAssetGroup& group) const;
     QList<CameraFileInfo> selectedFilesFlattened() const;

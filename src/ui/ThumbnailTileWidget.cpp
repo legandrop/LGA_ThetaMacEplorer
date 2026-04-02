@@ -38,7 +38,23 @@ ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* 
         "background:#2e7d32; color:#eaf7ea; border-radius:9px; "
         "font-size:9px; font-weight:bold; padding:1px 4px;"
     );
-    m_downloadedBadge->setVisible(group.allFilesDownloaded);
+    if (group.allFilesDownloaded) {
+        m_downloadedBadge->setText("DL");
+        m_downloadedBadge->setStyleSheet(
+            "background:#2e7d32; color:#eaf7ea; border-radius:9px; "
+            "font-size:9px; font-weight:bold; padding:1px 4px;"
+        );
+        m_downloadedBadge->setVisible(true);
+    } else if (group.hasPartialLocalContent) {
+        m_downloadedBadge->setText("PART");
+        m_downloadedBadge->setStyleSheet(
+            "background:#8a5b12; color:#fff3d6; border-radius:9px; "
+            "font-size:8px; font-weight:bold; padding:1px 4px;"
+        );
+        m_downloadedBadge->setVisible(true);
+    } else {
+        m_downloadedBadge->setVisible(false);
+    }
 
     // Show file type icon initially
     if (group.isVideo) {
