@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+
+  <!--
+    ThetaExplorer — ícono propuesto
+    Forma: símbolo θ (Theta) — círculo anular + barra horizontal
+    Técnica: aberración cromática CMYK (misma que PipeSync / FileManager)
+      Cyan   (#00aeef) offset arriba       → (0, -16)
+      Magenta(#ec008c) offset abajo-izq    → (-14, +8)
+      Yellow (#fff200) offset abajo-der    → (+14, +8)
+      Donde C+M+Y se superponen → negro
+      Donde C+M → índigo  |  C+Y → verde  |  M+Y → rojo
+    Dimensiones base:
+      Outer radius : 210  (center 256,256)
+      Inner radius : 166  (grosor del anillo = 44 px)
+      Barra        : y 234–278 (44 px alto), x 46–466
+  -->
+
+  <!-- Fondo blanco necesario para que multiply funcione correctamente -->
+  <rect width="512" height="512" fill="white"/>
+
+  <!--
+    Cada capa tiene su propio mix-blend-mode: multiply.
+    Así cada color mezcla sustractivamente contra el compuesto debajo de él.
+    (El error anterior: el multiply estaba en el grupo padre → mezclaba el
+     conjunto entero contra el fondo, en vez de mezclar las capas entre sí.)
+  -->
+
+  <!-- Placa Cyan — desplazada hacia arriba -->
+  <g transform="translate(0,-16)" style="mix-blend-mode: multiply" fill="#00aeef">
+    <path fill-rule="evenodd" d="
+      M 256,46  A 210,210 0 1,0 256,466 A 210,210 0 1,0 256,46  Z
+      M 256,90  A 166,166 0 1,1 256,422 A 166,166 0 1,1 256,90  Z"/>
+    <rect x="46" y="234" width="420" height="44"/>
+  </g>
+
+  <!-- Placa Magenta — desplazada abajo-izquierda -->
+  <g transform="translate(-14,8)" style="mix-blend-mode: multiply" fill="#ec008c">
+    <path fill-rule="evenodd" d="
+      M 256,46  A 210,210 0 1,0 256,466 A 210,210 0 1,0 256,46  Z
+      M 256,90  A 166,166 0 1,1 256,422 A 166,166 0 1,1 256,90  Z"/>
+    <rect x="46" y="234" width="420" height="44"/>
+  </g>
+
+  <!-- Placa Yellow — desplazada abajo-derecha -->
+  <g transform="translate(14,8)" style="mix-blend-mode: multiply" fill="#fff200">
+    <path fill-rule="evenodd" d="
+      M 256,46  A 210,210 0 1,0 256,466 A 210,210 0 1,0 256,46  Z
+      M 256,90  A 166,166 0 1,1 256,422 A 166,166 0 1,1 256,90  Z"/>
+    <rect x="46" y="234" width="420" height="44"/>
+  </g>
+</svg>

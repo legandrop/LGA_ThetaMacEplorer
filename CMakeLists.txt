@@ -129,5 +129,11 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_IDENTIFIER "com.lga.thetamacexplorer"
         MACOSX_BUNDLE_EXECUTABLE_NAME "ThetaMacExplorer"
+        MACOSX_BUNDLE_ICON_FILE "ThetaExplorer.icns"
     )
+
+    # Copiar el icono al bundle (Contents/Resources/)
+    set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/ThetaExplorer.icns")
+    set_source_files_properties("${APP_ICON}" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(${PROJECT_NAME} PRIVATE "${APP_ICON}")
 endif()

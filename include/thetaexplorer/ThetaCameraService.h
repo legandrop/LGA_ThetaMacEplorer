@@ -22,6 +22,7 @@ public:
     const QList<CameraFileInfo>& fileList() const { return m_files; }
     bool isCameraConnected() const { return m_connected; }
     bool isDownloadActive() const { return m_downloadActive; }
+    bool isDeleteActive() const { return m_deleteActive; }
 
     void requestThumbnail(const CameraFileInfo& file);
     void downloadFiles(const QList<CameraFileInfo>& files, const QString& destinationPath);
@@ -45,8 +46,11 @@ private slots:
     void onBridgeDownloadProgress(const QString& fileName, int percent);
     void onBridgeDownloadFileCompleted(const QString& fileName, const QString& savedPath);
     void onBridgeDownloadError(const QString& fileName, const QString& errorMessage);
+    void onBridgeDeleteCompleted(const QStringList& deletedPaths);
+    void onBridgeDeleteError(const QString& errorMessage);
     void resumeAfterRecovery();
     void kickNextDownload();
+    void onDeleteTimedOut();
 
 private:
     struct PendingDownload {
@@ -63,9 +67,14 @@ private:
     QTimer*               m_thumbnailTimer = nullptr;
     bool                  m_connected    = false;
     bool                  m_downloadActive = false;
+    bool                  m_deleteActive = false;
+    bool                  m_waitingForDeleteVerification = false;
     bool                  m_recoveringAfterDownloadError = false;
     int                   m_maxRecoveryRetries = 2;
     int                   m_interDownloadDelayMs = 180;
     int                   m_postErrorDelayMs = 900;
+    int                   m_deleteTimeoutMs = 8000;
     QHash<QString, int>   m_failureCountByDevicePath;
+    QList<CameraFileInfo> m_pendingDeleteFiles;
+    QTimer*               m_deleteTimer = nullptr;
 };

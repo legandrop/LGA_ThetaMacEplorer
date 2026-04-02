@@ -603,6 +603,13 @@ void MainWindow::onDeleteClicked()
     QList<CameraFileInfo> filesToDelete = selectedFilesFlattened();
     if (!ConfirmDeleteDialog::confirm(filesToDelete.size(), this)) return;
 
+    QStringList names;
+    for (const CameraFileInfo& file : filesToDelete) {
+        names << file.name;
+    }
+    LOGI("ui") << "Delete requested for" << filesToDelete.size()
+               << "file(s):" << names;
+
     m_deleteBtn->setEnabled(false);
     m_downloadBtn->setEnabled(false);
     setStatusMessage(QString("Deleting %1 file%2 from camera...")
@@ -757,7 +764,7 @@ void MainWindow::updateButtonStates()
 {
     bool hasCamera   = m_service->isCameraConnected();
     bool hasSelected = !m_selectedGroups.isEmpty();
-    const bool busy = m_downloadInProgress || m_service->isDownloadActive();
+    const bool busy = m_downloadInProgress || m_service->isDownloadActive() || m_service->isDeleteActive();
     m_downloadBtn->setEnabled(hasCamera && hasSelected && !busy);
     m_deleteBtn->setEnabled(hasCamera && hasSelected && !busy);
     m_folderBtn->setEnabled(!busy);
