@@ -36,14 +36,24 @@ void ThumbnailGridWidget::setGroups(const QList<MediaAssetGroup>& groups)
         connect(tile, &ThumbnailTileWidget::clicked,
                 this, &ThumbnailGridWidget::onTileClicked);
         m_tiles.append(tile);
-        thumbnailRequests.append(group.representative);
+        const QString key = group.representativeDevicePath();
+        if (m_thumbnailCache.contains(key)) {
+            tile->setThumbnail(m_thumbnailCache.value(key));
+        } else {
+            thumbnailRequests.append(group.representative);
+        }
     }
     relayoutGrid();
-    emit thumbnailsNeeded(thumbnailRequests);
+    if (!thumbnailRequests.isEmpty()) {
+        emit thumbnailsNeeded(thumbnailRequests);
+    }
 }
 
 void ThumbnailGridWidget::setThumbnail(const QString& devicePath, const QPixmap& thumbnail)
 {
+    if (!thumbnail.isNull()) {
+        m_thumbnailCache.insert(devicePath, thumbnail);
+    }
     for (ThumbnailTileWidget* tile : m_tiles) {
         if (tile->group().representativeDevicePath() == devicePath) {
             tile->setThumbnail(thumbnail);

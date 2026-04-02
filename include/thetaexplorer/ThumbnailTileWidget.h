@@ -28,7 +28,7 @@ protected:
 
 private:
     void updateStyleState();
-    QString buildDatesHtml() const;
+    QString buildDateHtml() const;
     QString ageColor(const QDateTime& timestamp) const;
 
     MediaAssetGroup m_group;
