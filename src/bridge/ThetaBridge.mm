@@ -332,8 +332,12 @@ static NSData* makePTPCommandData(uint16_t operationCode,
         return;
     }
 
-    const bool available = self.camera.batteryLevelAvailable;
-    const int percent = available ? (int)self.camera.batteryLevel : -1;
+    bool available = self.camera.batteryLevelAvailable;
+    int percent = available ? (int)self.camera.batteryLevel : -1;
+    if (!available && self.hasPTPBatteryLevel) {
+        available = YES;
+        percent = self.ptpBatteryLevel;
+    }
     LOGD("bridge") << "Battery status:"
                    << "available:" << available
                    << "percent:" << percent;
@@ -386,8 +390,8 @@ static NSData* makePTPCommandData(uint16_t operationCode,
         }
 
         int percent = -1;
-        if (ptpResponseData.length >= 1) {
-            const uint8_t* bytes = static_cast<const uint8_t*>(ptpResponseData.bytes);
+        if (responseData.length >= 1) {
+            const uint8_t* bytes = static_cast<const uint8_t*>(responseData.bytes);
             percent = static_cast<int>(bytes[0]);
         }
 
@@ -397,6 +401,8 @@ static NSData* makePTPCommandData(uint16_t operationCode,
                        << "dataBytes:" << (int)ptpResponseData.length;
 
         if (percent >= 0 && percent <= 100) {
+            strongSelf.hasPTPBatteryLevel = YES;
+            strongSelf.ptpBatteryLevel = percent;
             QMetaObject::invokeMethod(strongSelf.qtBridge, "batteryLevelChanged",
                                       Qt::QueuedConnection,
                                       Q_ARG(int, percent),
@@ -416,8 +422,8 @@ static NSData* makePTPCommandData(uint16_t operationCode,
             }
 
             int status = -1;
-            if (statusData.length >= 1) {
-                const uint8_t* statusBytes = static_cast<const uint8_t*>(statusData.bytes);
+            if (statusResponse.length >= 1) {
+                const uint8_t* statusBytes = static_cast<const uint8_t*>(statusResponse.bytes);
                 status = static_cast<int>(statusBytes[0]);
             }
             LOGI("bridge") << "PTP battery status result:"

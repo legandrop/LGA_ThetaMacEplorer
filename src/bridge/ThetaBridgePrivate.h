@@ -26,6 +26,8 @@
 @property (nonatomic, assign) BOOL recoveringDownloadSession;
 @property (nonatomic, assign) BOOL pendingBatteryQuery;
 @property (nonatomic, assign) uint32_t ptpTransactionId;
+@property (nonatomic, assign) BOOL hasPTPBatteryLevel;
+@property (nonatomic, assign) int ptpBatteryLevel;
 
 - (void)scheduleEnumeration;  // debounced entry point
 - (void)enumerateFiles;        // actual work, runs on main queue after debounce

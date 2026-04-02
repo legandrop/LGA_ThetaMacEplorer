@@ -740,8 +740,6 @@ void MainWindow::onErrorOccurred(const QString& message)
 void MainWindow::onBatteryLevelChanged(int percent, bool available)
 {
     if (!available || percent < 0) {
-        m_batteryLabel->setText("Battery --");
-        m_batteryLabel->setStyleSheet("color: #555555; font-size: 12px;");
         return;
     }
 
