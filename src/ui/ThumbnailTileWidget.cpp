@@ -68,17 +68,29 @@ ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* 
     m_typeLabel = new QLabel(this);
     m_typeLabel->setAlignment(Qt::AlignHCenter);
     m_typeLabel->setFixedWidth(148);
-    m_typeLabel->setStyleSheet("color: #555555; font-size: 10px; background: transparent;");
 
     m_typeLabel->setText(group.subtitle);
+
+    QString typeColor = "#555555";
+    if (group.isVideo) {
+        typeColor = "#8ab4ff";
+    } else if (group.isRaw) {
+        typeColor = "#e0a458";
+    } else {
+        typeColor = "#7dd3b0";
+    }
+    m_typeLabel->setStyleSheet(
+        QString("color: %1; font-size: 10px; font-weight: 700; background: transparent;")
+            .arg(typeColor)
+    );
 
     m_datesLabel = new QLabel(this);
     m_datesLabel->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     m_datesLabel->setFixedWidth(148);
     m_datesLabel->setWordWrap(true);
     m_datesLabel->setTextFormat(Qt::RichText);
-    m_datesLabel->setStyleSheet("font-size: 8px; background: transparent;");
-    m_datesLabel->setText(buildDatesHtml());
+    m_datesLabel->setStyleSheet("font-size: 10px; font-weight: 600; background: transparent;");
+    m_datesLabel->setText(buildDateHtml());
 
     layout->addWidget(m_thumb);
     layout->addWidget(m_nameLabel);
@@ -89,27 +101,18 @@ ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* 
     updateStyleState();
 }
 
-QString ThumbnailTileWidget::buildDatesHtml() const
+QString ThumbnailTileWidget::buildDateHtml() const
 {
-    QStringList chunks;
-    for (const CameraFileInfo& file : m_group.files) {
-        const QString color = ageColor(file.creationDate);
-        const QString text = file.creationDate.isValid()
-            ? file.creationDate.toString("MM-dd HH:mm")
-            : QString("no-date");
-        chunks.append(QString("<span style=\"color:%1;\">%2</span>").arg(color, text));
+    const QDateTime timestamp = m_group.representative.creationDate;
+    const QString color = ageColor(timestamp);
+    if (!timestamp.isValid()) {
+        return QString("<span style=\"color:%1;\">no-date</span>").arg(color);
     }
 
-    QStringList lines;
-    const int perLine = m_group.isHdrSet ? 3 : 1;
-    for (int i = 0; i < chunks.size(); i += perLine) {
-        QStringList row;
-        for (int j = i; j < qMin(i + perLine, chunks.size()); ++j) {
-            row.append(chunks[j]);
-        }
-        lines.append(row.join("  "));
-    }
-    return lines.join("<br/>");
+    const QString dayLine = timestamp.toString("ddd d MMMM");
+    const QString timeLine = timestamp.toString("HH:mm");
+    return QString("<span style=\"color:%1;\">%2</span><br/><span style=\"color:%1;\">%3</span>")
+        .arg(color, dayLine, timeLine);
 }
 
 QString ThumbnailTileWidget::ageColor(const QDateTime& timestamp) const
@@ -130,8 +133,13 @@ QString ThumbnailTileWidget::ageColor(const QDateTime& timestamp) const
     }
 
     const double t = qBound(0.0, ageHours / 28.0, 1.0);
-    const int startR = 192, startG = 255, startB = 192;
-    const int endR = 35, endG = 102, endB = 52;
+    const bool raw = m_group.isRaw;
+    const int startR = raw ? 255 : 192;
+    const int startG = raw ? 220 : 255;
+    const int startB = raw ? 150 : 192;
+    const int endR = raw ? 156 : 35;
+    const int endG = raw ? 103 : 102;
+    const int endB = raw ? 35 : 52;
     const int r = static_cast<int>(startR + (endR - startR) * t);
     const int g = static_cast<int>(startG + (endG - startG) * t);
     const int b = static_cast<int>(startB + (endB - startB) * t);

@@ -2,6 +2,8 @@
 #include <QScrollArea>
 #include <QGridLayout>
 #include <QList>
+#include <QHash>
+#include <QPixmap>
 #include "thetaexplorer/MediaAssetGroup.h"
 
 class ThumbnailTileWidget;
@@ -39,6 +41,7 @@ private:
     QGridLayout*                 m_layout     = nullptr;
     QList<ThumbnailTileWidget*>  m_tiles;
     ThumbnailTileWidget*         m_lastClicked = nullptr;
+    QHash<QString, QPixmap>      m_thumbnailCache;
 
     static constexpr int TILE_W  = 160;
     static constexpr int TILE_H  = 214;
