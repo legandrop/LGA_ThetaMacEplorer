@@ -1,7 +1,7 @@
 #include "thetaexplorer/ThetaCameraService.h"
 #include "thetaexplorer/ThetaBridge.h"
+#include "thetaexplorer/Logger.h"
 #include <QTimer>
-#include <QDebug>
 
 ThetaCameraService::ThetaCameraService(QObject* parent)
     : QObject(parent)
@@ -65,7 +65,7 @@ ThetaCameraService::~ThetaCameraService()
 
 void ThetaCameraService::start()
 {
-    qDebug() << "[Service] Starting camera browsing";
+    LOGI("service") << "Starting camera browsing";
     m_bridge->startBrowsing();
 }
 
@@ -79,7 +79,7 @@ void ThetaCameraService::onFileListUpdated(const QList<CameraFileInfo>& files)
 {
     // The bridge already debounces (300ms GCD) so this should fire only once
     // per connection burst. We always accept the new list.
-    qDebug() << "[Service] fileListUpdated:" << files.size() << "files";
+    LOGI("service") << "fileListUpdated:" << files.size() << "files";
 
     m_files = files;
 
@@ -105,7 +105,7 @@ void ThetaCameraService::drainThumbnailQueue()
     }
     if (m_thumbnailQueue.isEmpty()) {
         m_thumbnailTimer->stop();
-        qDebug() << "[Service] All thumbnails requested";
+        LOGD("service") << "All thumbnails requested";
     }
 }
 

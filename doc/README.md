@@ -16,6 +16,9 @@ Este directorio centraliza la documentacion funcional y tecnica del proyecto.
 - `real-catalog-export.md`
   Explica la herramienta de exportacion de catalogo real desde la app para calibrar la deteccion HDR sobre datos de la Z1 y no sobre supuestos.
 
+- `logging.md`
+  Documenta el sistema de logging central, las categorias, las variables de entorno y el criterio de uso.
+
 ## Criterio
 
 Antes de tocar comportamiento visible conviene mantener actualizada esta carpeta. En este proyecto es especialmente importante porque la app necesita separar:

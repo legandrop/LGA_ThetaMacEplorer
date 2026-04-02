@@ -1,4 +1,5 @@
 #include "thetaexplorer/CameraCatalogDebugExporter.h"
+#include "thetaexplorer/Logger.h"
 
 #include <QDir>
 #include <QFile>
@@ -212,9 +213,13 @@ bool CameraCatalogDebugExporter::exportCatalog(const QList<CameraFileInfo>& file
                                                const QString& outputPath,
                                                QString* errorMessage)
 {
+    LOGI("export") << "Starting export. files=" << files.size()
+                   << "outputPath=" << outputPath;
+
     const QFileInfo outInfo(outputPath);
     QDir outDir = outInfo.dir();
     if (!outDir.exists() && !outDir.mkpath(".")) {
+        LOGW("export") << "Failed to create directory:" << outDir.absolutePath();
         if (errorMessage) {
             *errorMessage = QString("Could not create directory: %1").arg(outDir.absolutePath());
         }
@@ -266,6 +271,7 @@ bool CameraCatalogDebugExporter::exportCatalog(const QList<CameraFileInfo>& file
 
     QFile outFile(outputPath);
     if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        LOGW("export") << "Failed to open output file:" << outputPath;
         if (errorMessage) {
             *errorMessage = QString("Could not open file for writing: %1").arg(outputPath);
         }
@@ -274,5 +280,6 @@ bool CameraCatalogDebugExporter::exportCatalog(const QList<CameraFileInfo>& file
 
     outFile.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
     outFile.close();
+    LOGI("export") << "Export finished successfully:" << outputPath;
     return true;
 }
