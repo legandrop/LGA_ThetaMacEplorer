@@ -28,11 +28,15 @@ protected:
 
 private:
     void updateStyleState();
+    QString buildDatesHtml() const;
+    QString ageColor(const QDateTime& timestamp) const;
 
     MediaAssetGroup m_group;
     QLabel*        m_thumb     = nullptr;
     QLabel*        m_nameLabel = nullptr;
     QLabel*        m_typeLabel = nullptr;
+    QLabel*        m_datesLabel = nullptr;
+    QLabel*        m_downloadedBadge = nullptr;
     bool           m_selected  = false;
     bool           m_hovered   = false;
 };

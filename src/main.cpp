@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
+#include <QIcon>
 
 int main(int argc, char* argv[])
 {
@@ -19,6 +20,7 @@ int main(int argc, char* argv[])
     app.setApplicationVersion("1.0.0");
     app.setOrganizationName("LGA");
     app.setOrganizationDomain("lga.com");
+    app.setWindowIcon(QIcon(":/icons/thetaexplorer_logo.svg"));
 
     LOGI("app") << "ThetaMacExplorer started at"
                 << QDateTime::currentDateTime().toString()

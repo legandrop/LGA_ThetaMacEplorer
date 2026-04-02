@@ -21,6 +21,11 @@
 #include <QPushButton>
 #include <QProgressBar>
 #include <QStatusBar>
+#include <QSettings>
+#include <QFileInfo>
+#include <QRegularExpression>
+#include <QIcon>
+#include <QPixmap>
 #include <QDebug>
 #include <QMessageBox>
 #include <QScrollBar>
@@ -89,6 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
     setupUI();
     setupConnections();
     applyStyles();
+    loadSettings();
 
     // Start scanning for the camera
     m_service->start();
@@ -125,6 +131,11 @@ void MainWindow::setupUI()
     tbLayout->setSpacing(10);
 
     // Camera status indicator
+    m_logoLabel = new QLabel(this);
+    m_logoLabel->setFixedSize(24, 24);
+    m_logoLabel->setPixmap(QPixmap(":/icons/thetaexplorer_logo.svg").scaled(
+        24, 24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
     m_cameraLabel = new QLabel("⬤  No camera connected", this);
     m_cameraLabel->setStyleSheet("color: #444444; font-size: 13px;");
     m_cameraLabel->setObjectName("cameraLabel");
@@ -159,19 +170,10 @@ void MainWindow::setupUI()
     m_folderLabel->setStyleSheet("color: #555555; font-size: 11px;");
     m_folderLabel->setMaximumWidth(200);
 
-    // Update folder label to show short path
-    auto updateFolderLabel = [this]() {
-        QString path = m_downloadFolder;
-        if (path.length() > 30)
-            path = "..." + path.right(27);
-        m_folderLabel->setText(path);
-    };
     updateFolderLabel();
-    connect(m_folderBtn, &QPushButton::clicked, this, [this, updateFolderLabel]() {
-        onBrowseFolderClicked();
-        updateFolderLabel();
-    });
+    connect(m_folderBtn, &QPushButton::clicked, this, &MainWindow::onBrowseFolderClicked);
 
+    tbLayout->addWidget(m_logoLabel);
     tbLayout->addWidget(m_cameraLabel);
     tbLayout->addWidget(sep1);
     tbLayout->addWidget(m_folderBtn);
@@ -295,6 +297,105 @@ void MainWindow::applyStyles()
     // Additional styles via QSS loaded in main.cpp
 }
 
+void MainWindow::loadSettings()
+{
+    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+
+    const QByteArray geometry = settings.value("window/geometry").toByteArray();
+    if (!geometry.isEmpty()) {
+        restoreGeometry(geometry);
+    }
+
+    const QByteArray mainState = settings.value("window/mainSplitter").toByteArray();
+    if (!mainState.isEmpty()) {
+        m_mainSplitter->restoreState(mainState);
+    }
+
+    const QByteArray rightState = settings.value("window/rightSplitter").toByteArray();
+    if (!rightState.isEmpty()) {
+        m_rightSplitter->restoreState(rightState);
+    }
+
+    const QString savedFolder = settings.value("downloads/folder").toString();
+    if (!savedFolder.isEmpty()) {
+        m_downloadFolder = savedFolder;
+        updateFolderLabel();
+    }
+}
+
+void MainWindow::saveSettings() const
+{
+    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    settings.setValue("window/geometry", saveGeometry());
+    settings.setValue("window/mainSplitter", m_mainSplitter->saveState());
+    settings.setValue("window/rightSplitter", m_rightSplitter->saveState());
+    settings.setValue("downloads/folder", m_downloadFolder);
+}
+
+void MainWindow::updateFolderLabel()
+{
+    QString path = m_downloadFolder;
+    if (path.length() > 30) {
+        path = "..." + path.right(27);
+    }
+    m_folderLabel->setText(path);
+}
+
+QString MainWindow::groupDownloadFolderName(const MediaAssetGroup& group) const
+{
+    QString base = group.displayTitle;
+    base.replace(QRegularExpression("[^A-Za-z0-9._-]+"), "_");
+    base.remove(QRegularExpression("^_+|_+$"));
+    if (base.isEmpty()) {
+        base = "item";
+    }
+
+    QString suffix;
+    if (group.isVideo) suffix = "_video";
+    else if (group.isRaw) suffix = "_dng";
+    else suffix = "_jpg";
+
+    return base + suffix;
+}
+
+QString MainWindow::groupDownloadFolderPath(const MediaAssetGroup& group) const
+{
+    return QDir(m_downloadFolder).filePath(groupDownloadFolderName(group));
+}
+
+QList<CameraFileInfo> MainWindow::selectedFilesFlattened() const
+{
+    QList<CameraFileInfo> files;
+    for (const MediaAssetGroup& group : m_selectedGroups) {
+        files.append(group.files);
+    }
+    return files;
+}
+
+void MainWindow::refreshDownloadedStatus()
+{
+    for (MediaAssetGroup& group : m_catalogGroups) {
+        const QString folderPath = groupDownloadFolderPath(group);
+        int found = 0;
+        for (const CameraFileInfo& file : group.files) {
+            const QString expectedPath = QDir(folderPath).filePath(file.name);
+            if (QFileInfo::exists(expectedPath)) {
+                ++found;
+            }
+        }
+        group.downloadedFileCount = found;
+        group.allFilesDownloaded = !group.files.isEmpty() && found == group.files.size();
+    }
+
+    m_gridWidget->setGroups(m_catalogGroups);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    saveSettings();
+    QMainWindow::closeEvent(event);
+}
+
 void MainWindow::onCameraConnected(const QString& name)
 {
     m_cameraLabel->setText("⬤  " + name);
@@ -321,7 +422,7 @@ void MainWindow::onFileListReady(const QList<CameraFileInfo>& files)
 {
     m_catalogFiles = files;
     m_catalogGroups = HdrGroupingService::buildGroups(files);
-    m_gridWidget->setGroups(m_catalogGroups);
+    refreshDownloadedStatus();
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
     m_selectedGroups.clear();
@@ -374,10 +475,7 @@ void MainWindow::onDownloadClicked()
     // Ensure download folder exists
     QDir().mkpath(m_downloadFolder);
 
-    QList<CameraFileInfo> filesToDownload;
-    for (const MediaAssetGroup& group : m_selectedGroups) {
-        filesToDownload.append(group.files);
-    }
+    QList<CameraFileInfo> filesToDownload = selectedFilesFlattened();
 
     m_downloadTotal = filesToDownload.size();
     m_downloadDone  = 0;
@@ -390,7 +488,11 @@ void MainWindow::onDownloadClicked()
     m_downloadBtn->setEnabled(false);
     m_deleteBtn->setEnabled(false);
 
-    m_service->downloadFiles(filesToDownload, m_downloadFolder);
+    for (const MediaAssetGroup& group : m_selectedGroups) {
+        const QString targetFolder = groupDownloadFolderPath(group);
+        QDir().mkpath(targetFolder);
+        m_service->downloadFiles(group.files, targetFolder);
+    }
     setStatusMessage(QString("Downloading %1 file%2 to %3...")
         .arg(m_downloadTotal)
         .arg(m_downloadTotal != 1 ? "s" : "")
@@ -400,10 +502,7 @@ void MainWindow::onDownloadClicked()
 void MainWindow::onDeleteClicked()
 {
     if (m_selectedGroups.isEmpty()) return;
-    QList<CameraFileInfo> filesToDelete;
-    for (const MediaAssetGroup& group : m_selectedGroups) {
-        filesToDelete.append(group.files);
-    }
+    QList<CameraFileInfo> filesToDelete = selectedFilesFlattened();
     if (!ConfirmDeleteDialog::confirm(filesToDelete.size(), this)) return;
 
     m_deleteBtn->setEnabled(false);
@@ -428,6 +527,9 @@ void MainWindow::onBrowseFolderClicked()
 
     if (!chosen.isEmpty()) {
         m_downloadFolder = chosen;
+        updateFolderLabel();
+        saveSettings();
+        refreshDownloadedStatus();
         LOGI("ui") << "Browse folder selected:" << m_downloadFolder;
     } else {
         LOGD("ui") << "Browse folder canceled by user";
@@ -507,6 +609,7 @@ void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString&
         m_progressBar->hide();
         m_progressLabel->hide();
         m_progressBar->setRange(0, 100);
+        refreshDownloadedStatus();
         updateButtonStates();
         setStatusMessage(
             QString("Downloaded %1 file%2 to %3")
