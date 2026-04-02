@@ -226,10 +226,24 @@ CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/ConfirmDeleteDialog.cpp -o CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.s
 
+CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o: CMakeFiles/ThetaMacExplorer.dir/flags.make
+CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o: /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp
+CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o: CMakeFiles/ThetaMacExplorer.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o -MF CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o.d -o CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o -c /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp
+
+CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp > CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.i
+
+CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp -o CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.s
+
 CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o: CMakeFiles/ThetaMacExplorer.dir/flags.make
 CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o: /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/ColorUtils.cpp
 CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o: CMakeFiles/ThetaMacExplorer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o -MF CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o.d -o CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o -c /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/ColorUtils.cpp
 
 CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.i: cmake_force
@@ -243,7 +257,7 @@ CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.s: cmake_force
 CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o: CMakeFiles/ThetaMacExplorer.dir/flags.make
 CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o: /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/bridge/ThetaBridge.mm
 CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o: CMakeFiles/ThetaMacExplorer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building OBJCXX object CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building OBJCXX object CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) -x objective-c++ $(OBJCXX_FLAGS) -x objective-c++ -fobjc-arc -MD -MT CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o -MF CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o.d -o CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o -c /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/bridge/ThetaBridge.mm
 
 CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.i: cmake_force
@@ -257,7 +271,7 @@ CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.s: cmake_force
 CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o: CMakeFiles/ThetaMacExplorer.dir/flags.make
 CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o: ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp
 CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o: CMakeFiles/ThetaMacExplorer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o -MF CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o.d -o CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o -c /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp
 
 CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.i: cmake_force
@@ -280,6 +294,7 @@ ThetaMacExplorer_OBJECTS = \
 "CMakeFiles/ThetaMacExplorer.dir/src/ui/PreviewPanel.cpp.o" \
 "CMakeFiles/ThetaMacExplorer.dir/src/ui/FileMetadataPanel.cpp.o" \
 "CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.o" \
+"CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o" \
 "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o" \
 "CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o" \
 "CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o"
@@ -297,6 +312,7 @@ ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplore
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/src/ui/PreviewPanel.cpp.o
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/src/ui/FileMetadataPanel.cpp.o
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/src/ui/ConfirmDeleteDialog.cpp.o
+ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/ThetaMacExplorer_autogen/3YJK5W5UP7/qrc_resources.cpp.o
@@ -306,7 +322,7 @@ ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: /Users/leg4/Qt/6.5.3/macos
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: /Users/leg4/Qt/6.5.3/macos/lib/QtGui.framework/Versions/A/QtGui
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Versions/A/QtCore
 ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer: CMakeFiles/ThetaMacExplorer.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Linking CXX executable ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Linking CXX executable ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ThetaMacExplorer.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

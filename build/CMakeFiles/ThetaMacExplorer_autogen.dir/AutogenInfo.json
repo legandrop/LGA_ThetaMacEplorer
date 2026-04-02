@@ -329,6 +329,12 @@
 	"HEADERS" : 
 	[
 		[
+			"/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/CameraCatalogDebugExporter.h",
+			"Mu",
+			"MCQTYSA26V/moc_CameraCatalogDebugExporter.cpp",
+			null
+		],
+		[
 			"/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/CameraFileInfo.h",
 			"Mu",
 			"MCQTYSA26V/moc_CameraFileInfo.cpp",
@@ -502,6 +508,11 @@
 		],
 		[
 			"/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/ThumbnailTileWidget.cpp",
+			"Mu",
+			null
+		],
+		[
+			"/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp",
 			"Mu",
 			null
 		],

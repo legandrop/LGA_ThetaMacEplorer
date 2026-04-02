@@ -1014,6 +1014,7 @@ CMakeFiles/ThetaMacExplorer.dir/src/ui/MainWindow.cpp.o: \
   /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/FileMetadataPanel.h \
   /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/DownloadManager.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/QStringList \
+  /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/CameraCatalogDebugExporter.h \
   /Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/ConfirmDeleteDialog.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/QDialog \
   /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/qdialog.h \
@@ -1029,8 +1030,7 @@ CMakeFiles/ThetaMacExplorer.dir/src/ui/MainWindow.cpp.o: \
   /Users/leg4/Qt/6.5.3/macos/lib/QtGui.framework/Headers/qguiapplication.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtGui.framework/Headers/qinputmethod.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtGui.framework/Headers/qguiapplication_platform.h \
-  /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/QFileDialog \
-  /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/qfiledialog.h \
+  /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/QDir \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/qdir.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/qfile.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/qfiledevice.h \
@@ -1068,6 +1068,8 @@ CMakeFiles/ThetaMacExplorer.dir/src/ui/MainWindow.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/usr/include/c++/v1/__filesystem/u8path.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/qfileinfo.h \
+  /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/QFileDialog \
+  /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/qfiledialog.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/QStandardPaths \
   /Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Headers/qstandardpaths.h \
   /Users/leg4/Qt/6.5.3/macos/lib/QtWidgets.framework/Headers/QStatusBar \

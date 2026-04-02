@@ -20,6 +20,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/PreviewPanel.cpp" "CMakeFiles/ThetaMacExplorer.dir/src/ui/PreviewPanel.cpp.o" "gcc" "CMakeFiles/ThetaMacExplorer.dir/src/ui/PreviewPanel.cpp.o.d"
   "/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/ThumbnailGridWidget.cpp" "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailGridWidget.cpp.o" "gcc" "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailGridWidget.cpp.o.d"
   "/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/ThumbnailTileWidget.cpp" "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.o" "gcc" "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.o.d"
+  "/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp" "CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o" "gcc" "CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o.d"
   "/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/ColorUtils.cpp" "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o" "gcc" "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o.d"
   "/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/bridge/ThetaBridge.mm" "CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o" "gcc" "CMakeFiles/ThetaMacExplorer.dir/src/bridge/ThetaBridge.mm.o.d"
   )

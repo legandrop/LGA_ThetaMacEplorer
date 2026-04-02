@@ -747,6 +747,7 @@ ThetaMacExplorer_autogen/timestamp: \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/3.31.6/CMakeOBJCXXCompiler.cmake \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/CMakeFiles/3.31.6/CMakeSystem.cmake \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/build/ThetaMacExplorer_autogen/moc_predefs.h \
+	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/CameraCatalogDebugExporter.h \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/CameraFileInfo.h \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/ColorUtils.h \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/include/thetaexplorer/ConfirmDeleteDialog.h \
@@ -768,6 +769,7 @@ ThetaMacExplorer_autogen/timestamp: \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/PreviewPanel.cpp \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/ThumbnailGridWidget.cpp \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/ui/ThumbnailTileWidget.cpp \
+	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/CameraCatalogDebugExporter.cpp \
 	/Users/leg4/Desktop/Codin/LGA_ThetaMacEplorer/src/utils/ColorUtils.cpp \
 	/Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Versions/A/Headers/QDateTime \
 	/Users/leg4/Qt/6.5.3/macos/lib/QtCore.framework/Versions/A/Headers/QList \

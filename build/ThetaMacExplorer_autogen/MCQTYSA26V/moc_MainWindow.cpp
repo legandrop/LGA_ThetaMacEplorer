@@ -53,6 +53,7 @@ static constexpr auto qt_meta_stringdata_CLASSMainWindowENDCLASS = QtMocHelpers:
     "onDownloadClicked",
     "onDeleteClicked",
     "onBrowseFolderClicked",
+    "onExportCatalogClicked",
     "onDownloadProgress",
     "fileName",
     "percent",
@@ -67,7 +68,7 @@ static constexpr auto qt_meta_stringdata_CLASSMainWindowENDCLASS = QtMocHelpers:
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSMainWindowENDCLASS_t {
-    uint offsetsAndSizes[48];
+    uint offsetsAndSizes[50];
     char stringdata0[11];
     char stringdata1[18];
     char stringdata2[1];
@@ -81,17 +82,18 @@ struct qt_meta_stringdata_CLASSMainWindowENDCLASS_t {
     char stringdata10[18];
     char stringdata11[16];
     char stringdata12[22];
-    char stringdata13[19];
-    char stringdata14[9];
-    char stringdata15[8];
-    char stringdata16[24];
-    char stringdata17[5];
-    char stringdata18[16];
-    char stringdata19[6];
-    char stringdata20[18];
-    char stringdata21[13];
-    char stringdata22[16];
-    char stringdata23[8];
+    char stringdata13[23];
+    char stringdata14[19];
+    char stringdata15[9];
+    char stringdata16[8];
+    char stringdata17[24];
+    char stringdata18[5];
+    char stringdata19[16];
+    char stringdata20[6];
+    char stringdata21[18];
+    char stringdata22[13];
+    char stringdata23[16];
+    char stringdata24[8];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSMainWindowENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -110,17 +112,18 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSMainWindowENDCLASS_t qt_meta_st
         QT_MOC_LITERAL(128, 17),  // "onDownloadClicked"
         QT_MOC_LITERAL(146, 15),  // "onDeleteClicked"
         QT_MOC_LITERAL(162, 21),  // "onBrowseFolderClicked"
-        QT_MOC_LITERAL(184, 18),  // "onDownloadProgress"
-        QT_MOC_LITERAL(203, 8),  // "fileName"
-        QT_MOC_LITERAL(212, 7),  // "percent"
-        QT_MOC_LITERAL(220, 23),  // "onDownloadFileCompleted"
-        QT_MOC_LITERAL(244, 4),  // "path"
-        QT_MOC_LITERAL(249, 15),  // "onDownloadError"
-        QT_MOC_LITERAL(265, 5),  // "error"
-        QT_MOC_LITERAL(271, 17),  // "onDeleteCompleted"
-        QT_MOC_LITERAL(289, 12),  // "deletedPaths"
-        QT_MOC_LITERAL(302, 15),  // "onErrorOccurred"
-        QT_MOC_LITERAL(318, 7)   // "message"
+        QT_MOC_LITERAL(184, 22),  // "onExportCatalogClicked"
+        QT_MOC_LITERAL(207, 18),  // "onDownloadProgress"
+        QT_MOC_LITERAL(226, 8),  // "fileName"
+        QT_MOC_LITERAL(235, 7),  // "percent"
+        QT_MOC_LITERAL(243, 23),  // "onDownloadFileCompleted"
+        QT_MOC_LITERAL(267, 4),  // "path"
+        QT_MOC_LITERAL(272, 15),  // "onDownloadError"
+        QT_MOC_LITERAL(288, 5),  // "error"
+        QT_MOC_LITERAL(294, 17),  // "onDeleteCompleted"
+        QT_MOC_LITERAL(312, 12),  // "deletedPaths"
+        QT_MOC_LITERAL(325, 15),  // "onErrorOccurred"
+        QT_MOC_LITERAL(341, 7)   // "message"
     },
     "MainWindow",
     "onCameraConnected",
@@ -135,6 +138,7 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSMainWindowENDCLASS_t qt_meta_st
     "onDownloadClicked",
     "onDeleteClicked",
     "onBrowseFolderClicked",
+    "onExportCatalogClicked",
     "onDownloadProgress",
     "fileName",
     "percent",
@@ -157,7 +161,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      12,   14, // methods
+      13,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -165,18 +169,19 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,   86,    2, 0x08,    1 /* Private */,
-       4,    0,   89,    2, 0x08,    3 /* Private */,
-       5,    1,   90,    2, 0x08,    4 /* Private */,
-       8,    1,   93,    2, 0x08,    6 /* Private */,
-      10,    0,   96,    2, 0x08,    8 /* Private */,
-      11,    0,   97,    2, 0x08,    9 /* Private */,
-      12,    0,   98,    2, 0x08,   10 /* Private */,
-      13,    2,   99,    2, 0x08,   11 /* Private */,
-      16,    2,  104,    2, 0x08,   14 /* Private */,
-      18,    2,  109,    2, 0x08,   17 /* Private */,
-      20,    1,  114,    2, 0x08,   20 /* Private */,
-      22,    1,  117,    2, 0x08,   22 /* Private */,
+       1,    1,   92,    2, 0x08,    1 /* Private */,
+       4,    0,   95,    2, 0x08,    3 /* Private */,
+       5,    1,   96,    2, 0x08,    4 /* Private */,
+       8,    1,   99,    2, 0x08,    6 /* Private */,
+      10,    0,  102,    2, 0x08,    8 /* Private */,
+      11,    0,  103,    2, 0x08,    9 /* Private */,
+      12,    0,  104,    2, 0x08,   10 /* Private */,
+      13,    0,  105,    2, 0x08,   11 /* Private */,
+      14,    2,  106,    2, 0x08,   12 /* Private */,
+      17,    2,  111,    2, 0x08,   15 /* Private */,
+      19,    2,  116,    2, 0x08,   18 /* Private */,
+      21,    1,  121,    2, 0x08,   21 /* Private */,
+      23,    1,  124,    2, 0x08,   23 /* Private */,
 
  // slots: parameters
     QMetaType::Void, QMetaType::QString,    3,
@@ -186,11 +191,12 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Void, QMetaType::QString, QMetaType::Int,   14,   15,
-    QMetaType::Void, QMetaType::QString, QMetaType::QString,   14,   17,
-    QMetaType::Void, QMetaType::QString, QMetaType::QString,   14,   19,
-    QMetaType::Void, QMetaType::QStringList,   21,
-    QMetaType::Void, QMetaType::QString,   23,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::QString, QMetaType::Int,   15,   16,
+    QMetaType::Void, QMetaType::QString, QMetaType::QString,   15,   18,
+    QMetaType::Void, QMetaType::QString, QMetaType::QString,   15,   20,
+    QMetaType::Void, QMetaType::QStringList,   22,
+    QMetaType::Void, QMetaType::QString,   24,
 
        0        // eod
 };
@@ -220,6 +226,8 @@ Q_CONSTINIT const QMetaObject MainWindow::staticMetaObject = { {
         // method 'onDeleteClicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onBrowseFolderClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onExportCatalogClicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onDownloadProgress'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
@@ -256,11 +264,12 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 4: _t->onDownloadClicked(); break;
         case 5: _t->onDeleteClicked(); break;
         case 6: _t->onBrowseFolderClicked(); break;
-        case 7: _t->onDownloadProgress((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2]))); break;
-        case 8: _t->onDownloadFileCompleted((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 9: _t->onDownloadError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 10: _t->onDeleteCompleted((*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[1]))); break;
-        case 11: _t->onErrorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 7: _t->onExportCatalogClicked(); break;
+        case 8: _t->onDownloadProgress((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2]))); break;
+        case 9: _t->onDownloadFileCompleted((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 10: _t->onDownloadError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 11: _t->onDeleteCompleted((*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[1]))); break;
+        case 12: _t->onErrorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -303,13 +312,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 12)
+        if (_id < 13)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 12;
+        _id -= 13;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 12)
+        if (_id < 13)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 12;
+        _id -= 13;
     }
     return _id;
 }

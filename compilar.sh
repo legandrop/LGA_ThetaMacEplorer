@@ -21,6 +21,7 @@ mkdir -p build
 cd build
 
 # AGL dummy workaround (macOS 12+ removed AGL library)
+EXTRA_CMAKE_ARGS=()
 if [ ! -f "/System/Library/Frameworks/AGL.framework/Versions/A/AGL" ]; then
     echo "Creating dummy AGL framework..."
     if [ ! -f "AGL.framework/Versions/A/AGL" ]; then
@@ -34,9 +35,7 @@ if [ ! -f "/System/Library/Frameworks/AGL.framework/Versions/A/AGL" ]; then
         rm agl_dummy.c
         echo "Dummy AGL framework created."
     fi
-    EXTRA_FLAGS="-DCMAKE_EXE_LINKER_FLAGS=-F $PWD"
-else
-    EXTRA_FLAGS=""
+    EXTRA_CMAKE_ARGS+=("-DCMAKE_EXE_LINKER_FLAGS=-F$PWD")
 fi
 
 # Configure
@@ -45,7 +44,7 @@ cmake .. \
     -DCMAKE_PREFIX_PATH="$QT_PATH" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
     -DCMAKE_OSX_ARCHITECTURES="x86_64" \
-    $EXTRA_FLAGS
+    "${EXTRA_CMAKE_ARGS[@]}"
 
 if [ $? -ne 0 ]; then
     echo "ERROR: CMake configuration failed."

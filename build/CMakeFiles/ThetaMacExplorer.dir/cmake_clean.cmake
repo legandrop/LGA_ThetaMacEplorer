@@ -26,6 +26,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailGridWidget.cpp.o.d"
   "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.o"
   "CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.o.d"
+  "CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o"
+  "CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o.d"
   "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o"
   "CMakeFiles/ThetaMacExplorer.dir/src/utils/ColorUtils.cpp.o.d"
   "ThetaMacExplorer.app/Contents/MacOS/ThetaMacExplorer"

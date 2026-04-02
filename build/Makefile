@@ -427,6 +427,30 @@ src/ui/ThumbnailTileWidget.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThetaMacExplorer.dir/build.make CMakeFiles/ThetaMacExplorer.dir/src/ui/ThumbnailTileWidget.cpp.s
 .PHONY : src/ui/ThumbnailTileWidget.cpp.s
 
+src/utils/CameraCatalogDebugExporter.o: src/utils/CameraCatalogDebugExporter.cpp.o
+.PHONY : src/utils/CameraCatalogDebugExporter.o
+
+# target to build an object file
+src/utils/CameraCatalogDebugExporter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThetaMacExplorer.dir/build.make CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.o
+.PHONY : src/utils/CameraCatalogDebugExporter.cpp.o
+
+src/utils/CameraCatalogDebugExporter.i: src/utils/CameraCatalogDebugExporter.cpp.i
+.PHONY : src/utils/CameraCatalogDebugExporter.i
+
+# target to preprocess a source file
+src/utils/CameraCatalogDebugExporter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThetaMacExplorer.dir/build.make CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.i
+.PHONY : src/utils/CameraCatalogDebugExporter.cpp.i
+
+src/utils/CameraCatalogDebugExporter.s: src/utils/CameraCatalogDebugExporter.cpp.s
+.PHONY : src/utils/CameraCatalogDebugExporter.s
+
+# target to generate assembly for a file
+src/utils/CameraCatalogDebugExporter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThetaMacExplorer.dir/build.make CMakeFiles/ThetaMacExplorer.dir/src/utils/CameraCatalogDebugExporter.cpp.s
+.PHONY : src/utils/CameraCatalogDebugExporter.cpp.s
+
 src/utils/ColorUtils.o: src/utils/ColorUtils.cpp.o
 .PHONY : src/utils/ColorUtils.o
 
@@ -496,6 +520,9 @@ help:
 	@echo "... src/ui/ThumbnailTileWidget.o"
 	@echo "... src/ui/ThumbnailTileWidget.i"
 	@echo "... src/ui/ThumbnailTileWidget.s"
+	@echo "... src/utils/CameraCatalogDebugExporter.o"
+	@echo "... src/utils/CameraCatalogDebugExporter.i"
+	@echo "... src/utils/CameraCatalogDebugExporter.s"
 	@echo "... src/utils/ColorUtils.o"
 	@echo "... src/utils/ColorUtils.i"
 	@echo "... src/utils/ColorUtils.s"
