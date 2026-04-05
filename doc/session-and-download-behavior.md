@@ -37,14 +37,17 @@ Cada grupo se descarga en una subcarpeta propia dentro de la carpeta de destino.
 
 Formato:
 
-- `<nombre_del_browser>_jpg`
-- `<nombre_del_browser>_dng`
-- `<nombre_del_browser>_video`
+- `HDRI_AAMMDD_<nombre>_jpg`
+- `HDRI_AAMMDD_<nombre>_dng`
+- `video_AAMMDD_<nombre>_`
+
+Donde `AAMMDD` es la fecha de captura del representativo (año 2 digitos, mes, dia).
 
 Ejemplos:
 
-- `R0021381-1389_jpg`
-- `R0021381-1389_dng`
+- `HDRI_260402_R0021381-1389_jpg`
+- `HDRI_260402_R0021381-1389_dng`
+- `video_260401_R0010661.MP4_`
 
 ## Fechas en tiles
 

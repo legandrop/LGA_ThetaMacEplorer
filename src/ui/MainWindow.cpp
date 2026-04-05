@@ -359,6 +359,10 @@ void MainWindow::updateFolderLabel()
 
 QString MainWindow::groupDownloadFolderName(const MediaAssetGroup& group) const
 {
+    const QString datePart = group.captureTime.isValid()
+        ? group.captureTime.toString("yyMMdd")
+        : QStringLiteral("000000");
+
     QString base = group.displayTitle;
     base.replace(QRegularExpression("[^A-Za-z0-9._-]+"), "_");
     base.remove(QRegularExpression("^_+|_+$"));
@@ -366,12 +370,13 @@ QString MainWindow::groupDownloadFolderName(const MediaAssetGroup& group) const
         base = "item";
     }
 
-    QString suffix;
-    if (group.isVideo) suffix = "_video";
-    else if (group.isRaw) suffix = "_dng";
-    else suffix = "_jpg";
-
-    return base + suffix;
+    if (group.isVideo) {
+        return QStringLiteral("video_%1_%2_").arg(datePart, base);
+    }
+    if (group.isRaw) {
+        return QStringLiteral("HDRI_%1_%2_dng").arg(datePart, base);
+    }
+    return QStringLiteral("HDRI_%1_%2_jpg").arg(datePart, base);
 }
 
 QString MainWindow::groupDownloadFolderPath(const MediaAssetGroup& group) const
