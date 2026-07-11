@@ -68,6 +68,18 @@ fi
 pkill -f "$APP_NAME" 2>/dev/null || true
 sleep 0.3
 
+# Guard contra cache viejo de SDK: si el CMakeCache apunta a un CMAKE_OSX_SYSROOT
+# (MacOSXNN.sdk) que ya no existe (tipico tras un update de Xcode que cambia la version
+# del SDK), CMake seguiria pasando un -isysroot inexistente y el build falla con
+# "'type_traits' file not found". En ese caso limpiamos el build para reconfigurar solo.
+if [ -f "$BUILD_DIR/CMakeCache.txt" ]; then
+    CACHED_SDK="$(awk -F= '/^CMAKE_OSX_SYSROOT/{print $2}' "$BUILD_DIR/CMakeCache.txt")"
+    if [ -n "$CACHED_SDK" ] && [ ! -d "$CACHED_SDK" ]; then
+        echo "SDK cacheado no existe ($CACHED_SDK); limpiando build para reconfigurar..."
+        rm -rf "$BUILD_DIR"
+    fi
+fi
+
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR" || exit 1
 
