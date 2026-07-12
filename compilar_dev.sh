@@ -162,6 +162,15 @@ fi
 
 echo "Build complete."
 
+# Refrescar el cache de iconos del bundle: tras cambiar el .icns, el Dock/Finder pueden
+# seguir mostrando el icono viejo por cache (iconservices). touch + lsregister -f fuerzan
+# a re-leer el icono. Si el cache de Tahoe sigue pegajoso, cerrar sesion y volver a entrar.
+LSREG="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if [ -d "$APP_BUNDLE" ]; then
+    touch "$APP_BUNDLE"
+    [ -x "$LSREG" ] && "$LSREG" -f "$APP_BUNDLE" >/dev/null 2>&1 || true
+fi
+
 if [ "$NO_RUN" = "true" ]; then
     exit 0
 fi
