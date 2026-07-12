@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 
     QApplication app(argc, argv);
     app.setApplicationName("ThetaMacExplorer");
-    app.setApplicationVersion("1.0.0");
+    app.setApplicationVersion("0.91");
     app.setOrganizationName("LGA");
     app.setOrganizationDomain("lga.com");
 #ifndef Q_OS_MAC
