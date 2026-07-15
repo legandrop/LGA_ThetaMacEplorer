@@ -83,22 +83,8 @@ fi
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR" || exit 1
 
-EXTRA_CMAKE_ARGS=()
-if [ ! -f "/System/Library/Frameworks/AGL.framework/Versions/A/AGL" ]; then
-    if [ ! -f "AGL.framework/Versions/A/AGL" ]; then
-        echo "Creating dummy AGL framework..."
-        mkdir -p AGL.framework/Versions/A
-        echo "void _aglDummy(){}" > agl_dummy.c
-        clang -dynamiclib agl_dummy.c -o AGL.framework/Versions/A/AGL \
-            -install_name /System/Library/Frameworks/AGL.framework/Versions/A/AGL \
-            -arch x86_64
-        ln -sf A AGL.framework/Versions/Current
-        ln -sf Versions/Current/AGL AGL.framework/AGL
-        rm agl_dummy.c
-    fi
-    EXTRA_CMAKE_ARGS+=("-DCMAKE_EXE_LINKER_FLAGS=-F$PWD")
-fi
-
+# El requerimiento de -framework AGL de Qt6 (via WrapOpenGL::WrapOpenGL) se
+# neutraliza directamente en CMakeLists.txt, asi que no hace falta dummy AGL.
 CMAKE_FLAGS=(
     -G "Unix Makefiles"
     -DCMAKE_PREFIX_PATH="$QT_PATH"
@@ -107,10 +93,22 @@ CMAKE_FLAGS=(
     -DCMAKE_BUILD_TYPE=Debug
     -DQt6_DIR="$QT_PATH/lib/cmake/Qt6"
     -DCMAKE_CXX_FLAGS_DEBUG="-g -O0 -Wno-unused-parameter"
-    "${EXTRA_CMAKE_ARGS[@]}"
 )
 
+# Migración: si la cache trae "-F <build>" del viejo dummy AGL, forzar
+# reconfiguración para que se limpie ese flag obsoleto.
+NEEDS_RECONFIGURE=false
 if [ ! -f "CMakeCache.txt" ] || [ "$FORCE_CLEAN" = "true" ]; then
+    NEEDS_RECONFIGURE=true
+else
+    CACHED_FLAGS=$(awk -F= '/^CMAKE_EXE_LINKER_FLAGS:STRING=/{print $2}' CMakeCache.txt 2>/dev/null || true)
+    if [[ "$CACHED_FLAGS" == *"-F "* ]]; then
+        echo "Cleaning stale -F flag from previous AGL dummy, reconfiguring..."
+        NEEDS_RECONFIGURE=true
+    fi
+fi
+
+if [ "$NEEDS_RECONFIGURE" = "true" ]; then
     echo "Configuring CMake..."
     cmake .. "${CMAKE_FLAGS[@]}" || exit 1
 fi
