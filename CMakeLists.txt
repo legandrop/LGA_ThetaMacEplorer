@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ThetaMacExplorer VERSION 0.91 LANGUAGES CXX OBJCXX)
+project(ThetaMacExplorer VERSION 0.92 LANGUAGES CXX OBJCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -39,6 +39,13 @@ endif()
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+if(APPLE)
+    # AGL (Apple Graphics Library) es un framework legacy de OpenGL que Apple removió
+    # en macOS 12+. Bloqueamos que FindOpenGL de CMake lo detecte o proponga.
+    set(OPENGL_agl_LIBRARY "" CACHE STRING "AGL library" FORCE)
+    set(OPENGL_AGL_INCLUDE_DIR "" CACHE PATH "AGL include dir" FORCE)
+endif()
+
 if(WIN32)
     set(CMAKE_PREFIX_PATH "C:/Qt/6.5.3/mingw_64")
 else()
@@ -46,6 +53,32 @@ else()
 endif()
 
 find_package(Qt6 COMPONENTS Core Gui Widgets Concurrent REQUIRED)
+
+if(APPLE)
+    # Qt6 usa el interface target WrapOpenGL::WrapOpenGL para OpenGL en macOS
+    # (definido en $QTDIR/lib/cmake/Qt6/FindWrapOpenGL.cmake). Ese archivo agrega
+    # "-framework AGL" incondicionalmente como fallback cuando find_library no
+    # encuentra AGL (removido en macOS 12+). Lo purgamos aca para que ni el
+    # sistema ni ningun consumer de Qt6::Gui traiga AGL por transitividad.
+    if(TARGET WrapOpenGL::WrapOpenGL)
+        get_target_property(_wo_libs WrapOpenGL::WrapOpenGL INTERFACE_LINK_LIBRARIES)
+        if(_wo_libs)
+            set(_wo_new_libs "")
+            set(_wo_changed FALSE)
+            foreach(_wo_lib ${_wo_libs})
+                if("${_wo_lib}" MATCHES "(^|/)AGL(\\.framework)?$" OR "${_wo_lib}" MATCHES "-framework[ \t]+AGL")
+                    set(_wo_changed TRUE)
+                else()
+                    list(APPEND _wo_new_libs "${_wo_lib}")
+                endif()
+            endforeach()
+            if(_wo_changed)
+                set_target_properties(WrapOpenGL::WrapOpenGL PROPERTIES INTERFACE_LINK_LIBRARIES "${_wo_new_libs}")
+                message(STATUS "AGL framework removed from WrapOpenGL::WrapOpenGL")
+            endif()
+        endif()
+    endif()
+endif()
 
 # ---- C++ Sources ----
 set(SOURCES
@@ -119,7 +152,6 @@ if(APPLE)
         "-framework CoreFoundation"
         "-framework CoreGraphics"
     )
-    target_link_options(${PROJECT_NAME} PRIVATE "LINKER:-weak_framework,AGL")
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE TRUE

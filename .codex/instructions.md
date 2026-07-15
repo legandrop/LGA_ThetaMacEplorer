@@ -22,7 +22,7 @@
 ## Iconos de macOS
 
 - Las reglas completas (reusables para todas las apps LGA) estan en
-  `LGA_PipeSync_2/Docs/_Doc_Aprendizaje_QT_C.md`, seccion "Iconos de macOS":
+  `LGA_Base_QT_C_Py/docs/_Doc_Aprendizaje_QT_C.md`, seccion "Iconos de macOS":
   - Squircle **plano al 80%** de la grilla de Apple; macOS Tahoe agrega el rim (Liquid Glass).
   - **Glyph al 74%** del squircle, centrado, con padding (nunca toca el borde).
   - **Fondo = mismo gris que PipeSync** (gradiente `46 → 28`), **nunca negro**.
