@@ -17,7 +17,9 @@ int main(int argc, char* argv[])
 
     QApplication app(argc, argv);
     app.setApplicationName("ThetaMacExplorer");
-    app.setApplicationVersion("0.92");
+    // Version desde macro CMake (fuente unica de verdad en CMakeLists.txt via
+    // target_compile_definitions). NO hardcodear el numero aca.
+    app.setApplicationVersion(QLatin1String(THETAMACEXPLORER_VERSION));
     app.setOrganizationName("LGA");
     app.setOrganizationDomain("lga.com");
 #ifndef Q_OS_MAC

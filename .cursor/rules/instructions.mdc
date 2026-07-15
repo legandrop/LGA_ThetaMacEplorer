@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Instrucciones para LGA ThetaMacExplorer
 
 - Todas las reglas de este repo (`.codex/`, `.cursor/rules/`, `CLAUDE.md` si existiera) deben estar escritas en castellano.

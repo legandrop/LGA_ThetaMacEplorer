@@ -12,8 +12,13 @@ QT_PATH="$HOME/Qt/6.5.3/macos"
 
 echo "=== Building $APP_NAME ==="
 
-# Kill existing process
-pkill -f "$APP_NAME" 2>/dev/null && echo "Killed running instance." || true
+# Kill existing process.
+# IMPORTANTE: no usar `pkill -f "$APP_NAME"` (patrón demasiado genérico:
+# matchea cualquier proceso cuya command line contenga la palabra —incluidas
+# extensiones/helpers de VSCode— y hace que VSCode las relance varias
+# veces al arrancar el script). Apuntar al path completo del ejecutable
+# dentro del .app.
+pkill -f "${APP_NAME}.app/Contents/MacOS/${APP_NAME}" 2>/dev/null && echo "Killed running instance." || true
 sleep 0.5
 
 # Create build dir

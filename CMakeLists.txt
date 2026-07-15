@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ThetaMacExplorer VERSION 0.92 LANGUAGES CXX OBJCXX)
+project(ThetaMacExplorer VERSION 0.93 LANGUAGES CXX OBJCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -135,6 +135,13 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# Fuente única de verdad del número de versión: el `project(... VERSION ...)` de arriba
+# se expone al código C++ como macro THETAMACEXPLORER_VERSION. Convención LGA — evita
+# tener el número hardcodeado en main.cpp / Info.plist.
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    THETAMACEXPLORER_VERSION="${PROJECT_VERSION}"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
