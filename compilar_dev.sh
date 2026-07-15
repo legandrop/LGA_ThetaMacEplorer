@@ -65,7 +65,13 @@ if [ "$FORCE_CLEAN" = "true" ]; then
     rm -rf "$BUILD_DIR"
 fi
 
-pkill -f "$APP_NAME" 2>/dev/null || true
+# Matar SOLO el ejecutable del bundle de este proyecto.
+# IMPORTANTE: no usar `pkill -f "$APP_NAME"` (patrón demasiado genérico:
+# matchea cualquier proceso cuya command line contenga la palabra —incluidas
+# extensiones/helpers de VSCode— y hace que VSCode las relance varias
+# veces al arrancar el script). Apuntar al path completo del ejecutable
+# dentro del .app.
+pkill -f "${APP_NAME}.app/Contents/MacOS/${APP_NAME}" 2>/dev/null || true
 sleep 0.3
 
 # Guard contra cache viejo de SDK: si el CMakeCache apunta a un CMAKE_OSX_SYSROOT
