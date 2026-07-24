@@ -1,6 +1,6 @@
 # Instrucciones para LGA ThetaMacExplorer
 
-- Todas las reglas de este repo (`.codex/`, `.cursor/rules/`, `CLAUDE.md` si existiera) deben estar escritas en castellano.
+- Todas las reglas de este repo (`AGENTS.md`, `.cursor/rules/`, `CLAUDE.md` si existiera) deben estar escritas en castellano.
 - Este archivo es **espejo** de `.cursor/rules/instructions.mdc`. Al modificar acá, sincronizar tambien el `.mdc` — y viceversa.
 
 ## Layout del workspace
