@@ -62,9 +62,10 @@ El pipeline generativo viejo (squircle plano al 80 %, glyph al 74 %, fondo `46 �
 - No hacer builds limpios automaticamente. No borrar, vaciar ni recrear `build/` salvo pedido explicito. Preservar la cache incremental.
 - Si la compilacion falla, intentar corregir el problema SIN limpiar primero.
 - **Guard de SDK**: `compilar_dev.sh` chequea si el `CMAKE_OSX_SYSROOT` cacheado ya no existe (tipico tras un update de Xcode que cambia `MacOSXNN.sdk`); si desapareció, limpia el build para reconfigurar y evita el error `'type_traits' file not found`.
-- **El script TOMA la terminal: termina con `exec "$APP_BIN"`**, o sea reemplaza el proceso del shell con la app y no devuelve el control hasta que la app se cierra. Un agente que lo corra en primer plano se queda esperando para siempre. Las dos formas correctas:
-  - **`./compilar_dev.sh --no-run`** — compila, deploya y refresca el cache de iconos, pero no lanza la app. **Es la opcion por defecto** cuando solo hace falta validar que compila o revisar el bundle.
-  - **En segundo plano** — cuando ademas se quiere que la app quede corriendo (por ejemplo para mirar el icono en el Dock).
+- **El script NO toma la terminal**: por defecto lanza la app en **background** (`&` + `disown`) y termina enseguida, igual que PipeSync y FileManagerS3. Antes terminaba con `exec "$APP_BIN"`, que reemplaza el proceso del shell con la app y no devuelve el control hasta cerrarla — eso colgaba a cualquiera que compilara, y a los agentes por tiempo indefinido.
+  - **`--wait`** — deja la app en foreground: la terminal queda retenida hasta cerrarla y se ven su stdout/stderr y su **exit code**. Es lo que sirve para depurar un crash al arranque.
+  - **`--no-run`** — compila y deploya sin lanzar la app.
+  - El stdout/stderr de la app se descarta en modo background: el log completo va a `/tmp/ThetaMacExplorer.log` (override con `THETA_LOG_FILE`).
 - Otros flags utiles: `--force-clean`, `--parallel N`, `--no-deploy`, `--help`.
 - El script **ya refresca el cache de iconos** del bundle (`touch` + `lsregister -f`) antes de lanzar. No hace falta repetirlo a mano, salvo que se toque el bundle *despues* de compilar (por ejemplo al borrar un `.icns` viejo que quedo de un build incremental).
 

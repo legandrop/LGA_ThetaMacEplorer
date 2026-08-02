@@ -14,18 +14,26 @@ APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 APP_BIN="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
 show_help() {
-    echo "Uso: $0 [--force-clean] [--parallel N] [--no-deploy] [--no-run]"
+    echo "Uso: $0 [--force-clean] [--parallel N] [--no-deploy] [--no-run] [--wait]"
     echo ""
     echo "Opciones:"
     echo "  --force-clean    Borra build y reconfigura desde cero"
     echo "  --parallel N     Usa N núcleos para compilar"
     echo "  --no-deploy      Salta macdeployqt y copias de plugins"
     echo "  --no-run         Compila pero no lanza la app"
+    echo "  --wait           Dejar la app en foreground: la terminal queda retenida hasta"
+    echo "                   cerrarla y se ven su stdout/stderr y su exit code."
+    echo "                   Por defecto la app se lanza en background y el script termina."
 }
 
 FORCE_CLEAN=false
 NO_DEPLOY=false
 NO_RUN=false
+# Por defecto la app se lanza en BACKGROUND y el script termina enseguida. Dejarla en
+# foreground retiene la terminal hasta que alguien cierre la app a mano, lo que en la
+# practica cuelga al que compila (y a cualquier agente) por tiempo indefinido.
+# Con --wait se recupera el comportamiento viejo, util para ver un crash o un exit code.
+WAIT_FOR_APP=false
 PARALLEL_CORES=$(sysctl -n hw.logicalcpu)
 
 while [[ $# -gt 0 ]]; do
@@ -44,6 +52,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-run)
             NO_RUN=true
+            shift
+            ;;
+        --wait)
+            WAIT_FOR_APP=true
             shift
             ;;
         --help)
@@ -185,4 +197,20 @@ if [ ! -x "$APP_BIN" ]; then
 fi
 
 echo "Launching $APP_NAME..."
-exec "$APP_BIN"
+
+# Por defecto se lanza en BACKGROUND y el script termina enseguida. Dejarla en foreground
+# retiene la terminal hasta que alguien cierra la app a mano, lo que en la practica cuelga
+# al que compila (y a cualquier agente) por tiempo indefinido. El stdout/stderr de la app
+# se descarta: el log completo ya va al archivo de Logger (por defecto
+# /tmp/ThetaMacExplorer.log, override con la variable de entorno THETA_LOG_FILE).
+#
+# Con --wait se mantiene el comportamiento viejo, que es el que sirve para ver un crash al
+# arranque, el exit code o los prints que todavia no pasan por el log.
+if [ "$WAIT_FOR_APP" = "true" ]; then
+    exec "$APP_BIN"
+else
+    "$APP_BIN" >/dev/null 2>&1 &
+    disown
+    echo "   PID $! (background). Log: ${THETA_LOG_FILE:-/tmp/ThetaMacExplorer.log}"
+    echo "   Usá --wait si necesitás ver su salida o su exit code en la terminal."
+fi
