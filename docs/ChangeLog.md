@@ -1,5 +1,9 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.99:
+- Build: `compilar_dev.sh` deja de tomar la terminal. Terminaba con `exec "$APP_BIN"`, que reemplaza el proceso del shell con la app y no devuelve el control hasta que alguien la cierra a mano: colgaba al que compilaba por tiempo indefinido. Se adopta el patron que ya usaba PipeSync: por defecto la app se lanza en **background** (`&` + `disown`) y el script termina enseguida imprimiendo el PID y la ruta del log, y se agrega **`--wait`** para recuperar el comportamiento viejo cuando hace falta ver un crash al arranque, el stdout/stderr o el **exit code**. El `--no-run` que ya existia se mantiene para compilar sin lanzar. En background el stdout/stderr se descarta porque el log completo va a `/tmp/ThetaMacExplorer.log` (override con `THETA_LOG_FILE`, que es lo que lee `Logger.cpp` — no `~/Library/Logs/LGA/` como las otras apps). Medido: sin flag el script vuelve en 1.2 s con la app corriendo. Se corrige tambien la seccion "Build" de las reglas del repo, que en v0.97 habia quedado recomendando `--no-run` como solucion al bloqueo cuando la solucion real era no bloquear.
+- [ Build - compilar_dev.sh lanza en background por defecto y suma --wait ]
+
 v0.98:
 - Reglas: las reglas del repo se sincronizan; una de sus copias no habia recibido la reescritura de las secciones "Iconos de macOS" y "Build".
 - [ Reglas - Sincronizar las reglas del repo ]
