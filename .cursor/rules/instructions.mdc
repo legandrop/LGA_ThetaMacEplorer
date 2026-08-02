@@ -133,6 +133,7 @@ Si se agrega un Help/About tab visible al usuario:
 - No agregar, invitar, aceptar, configurar ni modificar colaboradores, equipos, bots, apps, deploy keys, permisos de repo, reglas de acceso o cualquier ajuste que pueda hacer aparecer otro colaborador o identidad con acceso al repo.
 - Si una herramienta, integracion o flujo pide autenticar, autorizar o agregar otro usuario/app con permisos sobre GitHub, detenerse y consultar al usuario antes de continuar.
 - Todos los commits y pushes deben hacerse con la identidad de Git del usuario `legandrop`. No usar coautores, autores alternativos ni footers de atribucion automatica.
+- **La cuenta correcta es `legandrop`, ID de GitHub `176236735`**, o sea el email `176236735+legandrop@users.noreply.github.com`. **Verificar `git config user.email` ANTES de commitear**: si no es ese, corregirlo y avisar antes de seguir. Ya pasó dos veces que quedaran commits con `89184004+legandrop@...`, una cuenta vieja: el nombre se ve igual, pero GitHub atribuye por email, así que esos commits quedan fuera del gráfico de contribuciones de la cuenta buena. Los que ya están en la historia **no se reescriben**.
 - No mencionar herramientas, agentes, modelos de IA ni asistentes automatizados en commits, changelogs, README, documentacion, PRs, issues, releases, comentarios de codigo, logs visibles o cualquier texto versionado del repo.
 - Los mensajes de commit deben describir solamente el cambio funcional o documental hecho en el repo, sin referencias a quien o que lo genero.
 
