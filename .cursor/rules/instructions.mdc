@@ -4,8 +4,12 @@ alwaysApply: true
 
 # Instrucciones para LGA ThetaMacExplorer
 
-- Todas las reglas de este repo (`AGENTS.md`, `.cursor/rules/`, `CLAUDE.md` si existiera) deben estar escritas en castellano.
-- Este archivo es **espejo** de `.cursor/rules/instructions.mdc`. Al modificar acá, sincronizar tambien el `.mdc` — y viceversa.
+- Todas las reglas de este repo (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`) deben estar escritas en castellano.
+- Este archivo es uno de **tres espejos** del mismo contenido:
+  - `CLAUDE.md` (Claude Code)
+  - `AGENTS.md` (Codex)
+  - `.cursor/rules/instructions.mdc` (Cursor)
+- Al modificar cualquiera de los tres, sincronizar los otros dos **en la misma pasada**. El único contenido que puede diferir es el frontmatter YAML del `.mdc` (`alwaysApply: true`).
 
 ## Layout del workspace
 
@@ -38,15 +42,18 @@ Fuente de verdad para las convenciones LGA:
 
 ## Iconos de macOS
 
-Las reglas completas (reusables para todas las apps LGA) estan en `../LGA_Base_QT_C_Py/docs/_Doc_Aprendizaje_QT_C.md`, seccion "Iconos de macOS":
+**El icono se disena en Icon Composer, no se genera.** El usuario exporta un `.icon` a `resources/icons/Alta/<Nombre>.icon` (es un directorio: `icon.json` + `Assets/`), se prueba con una app placeholder en `../LGA_IconLab`, y recien cuando el usuario aprueba se aplica aca. La fuente de verdad del pipeline es la seccion **5.2 Icon Composer** de `../LGA_IconLab/docs/Doc_Iconos_App.md`.
 
-- Squircle **plano al 80%** de la grilla de Apple; macOS Tahoe agrega el rim (Liquid Glass).
-- **Glyph al 74%** del squircle, centrado, con padding (nunca toca el borde).
-- **Fondo = mismo gris que PipeSync** (gradiente `46 → 28`), **nunca negro**.
-- Usar el **glyph limpio transparente** (SVG rasterizado con `qlmanage`, o PNG transparente), **NO** extraerlo del icono horneado (arrastra el borde del squircle viejo como fantasma).
-- En macOS **no** setear el icono en runtime (`setWindowIcon`): manda el `.icns` del bundle (ya esta con `#ifndef Q_OS_MAC` en `src/main.cpp`).
+- Se compila con `actool` y **siempre** con `--standalone-icon-behavior all`: sin ese flag el `.icns` auxiliar trae solo 4 representaciones y llega hasta 256 px; con el son 10 y llega a 1024.
+- Antes de compilar hay que copiar el `.icon` a `AppIcon.icon`: `actool` nombra el asset segun el archivo, y de ahi sale el valor de `CFBundleIconName`.
+- Van **dos** recursos a `Contents/Resources/` y hacen falta los dos: `Assets.car` (el icono real, via `CFBundleIconName`) y `AppIcon.icns` (fallback, via `CFBundleIconFile`).
+- **NO** convertir el `.icon` a un `.icns` suelto descartando el `Assets.car`: eso pierde el comportamiento moderno y reaparece el problema de tamano en Cmd+Tab.
+- En macOS **no** setear el icono en runtime (`setWindowIcon`): manda el icono del bundle (ya esta con `#ifndef Q_OS_MAC` en `src/main.cpp`).
+- Un build incremental **no** borra los recursos que el `CMakeLists` dejo de copiar: al cambiar de icono, revisar que no quede el `.icns` viejo adentro del bundle.
 
-Tras cambiar el `.icns`, `compilar_dev.sh` refresca el cache de iconos del bundle (`touch` + `lsregister -f`). Si el cache de Tahoe sigue pegajoso, cerrar sesion y volver a entrar.
+Tras cambiar el icono, `compilar_dev.sh` refresca el cache del bundle (`touch` + `lsregister -f`). El bundle id es fijo, asi que el cache muerde mas que en un placeholder; si sigue pegajoso, cerrar sesion y volver a entrar.
+
+El pipeline generativo viejo (squircle plano al 80 %, glyph al 74 %, fondo `46 → 28`) sigue documentado en `../LGA_Base_QT_C_Py/docs/_Doc_Aprendizaje_QT_C.md` y **sigue siendo el que produce el `.ico` de Windows** en las apps que lo tienen. Esta app es solo macOS.
 
 ## Build
 
@@ -59,6 +66,11 @@ Tras cambiar el `.icns`, `compilar_dev.sh` refresca el cache de iconos del bundl
 - No hacer builds limpios automaticamente. No borrar, vaciar ni recrear `build/` salvo pedido explicito. Preservar la cache incremental.
 - Si la compilacion falla, intentar corregir el problema SIN limpiar primero.
 - **Guard de SDK**: `compilar_dev.sh` chequea si el `CMAKE_OSX_SYSROOT` cacheado ya no existe (tipico tras un update de Xcode que cambia `MacOSXNN.sdk`); si desapareció, limpia el build para reconfigurar y evita el error `'type_traits' file not found`.
+- **El script TOMA la terminal: termina con `exec "$APP_BIN"`**, o sea reemplaza el proceso del shell con la app y no devuelve el control hasta que la app se cierra. Un agente que lo corra en primer plano se queda esperando para siempre. Las dos formas correctas:
+  - **`./compilar_dev.sh --no-run`** — compila, deploya y refresca el cache de iconos, pero no lanza la app. **Es la opcion por defecto** cuando solo hace falta validar que compila o revisar el bundle.
+  - **En segundo plano** — cuando ademas se quiere que la app quede corriendo (por ejemplo para mirar el icono en el Dock).
+- Otros flags utiles: `--force-clean`, `--parallel N`, `--no-deploy`, `--help`.
+- El script **ya refresca el cache de iconos** del bundle (`touch` + `lsregister -f`) antes de lanzar. No hace falta repetirlo a mano, salvo que se toque el bundle *despues* de compilar (por ejemplo al borrar un `.icns` viejo que quedo de un build incremental).
 
 ## Politica de idioma
 
