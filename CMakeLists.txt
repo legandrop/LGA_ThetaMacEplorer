@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ThetaMacExplorer VERSION 0.93 LANGUAGES CXX OBJCXX)
+project(ThetaMacExplorer VERSION 0.96 LANGUAGES CXX OBJCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -168,11 +168,27 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_IDENTIFIER "com.lga.thetamacexplorer"
         MACOSX_BUNDLE_EXECUTABLE_NAME "ThetaMacExplorer"
-        MACOSX_BUNDLE_ICON_FILE "ThetaExplorer.icns"
+        MACOSX_BUNDLE_ICON_FILE "AppIcon.icns"
     )
 
-    # Copiar el icono al bundle (Contents/Resources/)
-    set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/ThetaExplorer.icns")
-    set_source_files_properties("${APP_ICON}" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    target_sources(${PROJECT_NAME} PRIVATE "${APP_ICON}")
+    # Icono de macOS: pipeline Icon Composer. El icono se disena en
+    # resources/icons/Alta/<App>.icon y se compila con actool (ver ../LGA_IconLab).
+    # Se copian DOS recursos y hacen falta los dos:
+    #   Assets.car    el icono moderno completo, que es lo que consume macOS 26 via
+    #                 CFBundleIconName. Sin esto no hay tratamiento moderno.
+    #   AppIcon.icns  fallback de compatibilidad, via CFBundleIconFile. Se genera con
+    #                 --standalone-icon-behavior all para que traiga TODOS los tamanos
+    #                 (16..1024); por defecto actool solo mete un subconjunto chico que
+    #                 llega hasta 256 px.
+    # NO convertir el .icon a un .icns suelto descartando el Assets.car: eso pierde el
+    # comportamiento moderno y reaparece el problema de tamano en Cmd+Tab.
+    set(APP_ICON_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/AppIcon.icns")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/Assets.car")
+        list(APPEND APP_ICON_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/Assets.car")
+    else()
+        message(WARNING "Falta resources/icons/Assets.car: el icono va a caer al .icns "
+                        "de compatibilidad y se pierde el icono moderno.")
+    endif()
+    set_source_files_properties(${APP_ICON_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(${PROJECT_NAME} PRIVATE ${APP_ICON_FILES})
 endif()
