@@ -13,8 +13,15 @@
     <string>6.0</string>
     <key>CFBundleName</key>
     <string>@MACOSX_BUNDLE_BUNDLE_NAME@</string>
+    <!-- Icono de la aplicacion.
+         CFBundleIconName apunta al icono moderno dentro de Assets.car (Icon Composer);
+         es la clave que usa macOS 26. CFBundleIconFile es el fallback al .icns suelto.
+         Van las dos: sin la primera se pierde el tratamiento moderno, y sin la segunda
+         las herramientas que no leen el CAR se quedan sin icono. -->
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIconFile</key>
-    <string>ThetaExplorer</string>
+    <string>AppIcon.icns</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

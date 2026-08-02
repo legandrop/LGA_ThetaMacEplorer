@@ -1,5 +1,9 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.96:
+- Icono de macOS: pasa al pipeline de Icon Composer. El icono se disena en `resources/icons/Alta/ThetaMacExplorer_v003.icon` y se compila con `actool`, en vez del `ThetaExplorer.icns` generado con el pipeline de `../LGA_IconLab`. Van **dos** recursos a `Contents/Resources/` y hacen falta los dos: `Assets.car`, que es el icono real y lo que consume macOS 26 via `CFBundleIconName`, y `AppIcon.icns` como fallback via `CFBundleIconFile`. Convertir el `.icon` a un `.icns` suelto y descartar el CAR reintroduce el problema de tamano en Cmd+Tab. El `.icns` se genera con `--standalone-icon-behavior all`: por defecto `actool` mete solo 4 representaciones y llega hasta 256 px, con el flag son 10 y llega a 1024. `CMakeLists.txt` copia ambos y avisa con `message(WARNING)` si falta el CAR, porque sin el el icono cae al fallback sin romper el build. `cmake/Info.plist.in` suma `CFBundleIconName`. Se aprovecha para resincronizar la version: el `project(... VERSION ...)` estaba en `0.93` mientras el ChangeLog ya iba por `v0.95`, o sea las dos entradas anteriores no habian bumpeado el CMakeLists.
+- [ Icono - El icono de macOS pasa a Icon Composer con Assets.car y icns de fallback ]
+
 v0.95:
 - Version / infra: se implementa el patron LGA "CMake single source". Se agrega `target_compile_definitions(ThetaMacExplorer PRIVATE THETAMACEXPLORER_VERSION="${PROJECT_VERSION}")` en `CMakeLists.txt`, y `src/main.cpp` cambia el hardcode `app.setApplicationVersion("0.93")` por `app.setApplicationVersion(QLatin1String(THETAMACEXPLORER_VERSION))`. Estado final: la version esta en UN solo lugar (`project(ThetaMacExplorer VERSION ...)` en CMakeLists), no requiere sincronizacion manual entre CMake y main.cpp. `.codex/instructions.md` (+ espejo `.mdc`) actualizado con la seccion "Fuente unica de verdad" al estado nuevo (ya no "pendiente de migrar").
 - [ Version - CMake single source (THETAMACEXPLORER_VERSION macro) ]
