@@ -1,5 +1,13 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.98:
+- Reglas: las reglas del repo se sincronizan; una de sus copias no habia recibido la reescritura de las secciones "Iconos de macOS" y "Build".
+- [ Reglas - Sincronizar las reglas del repo ]
+
+v0.97:
+- Rules / build: se documenta que `compilar_dev.sh` **toma la terminal**. El script termina con `exec "$APP_BIN"`, o sea reemplaza el proceso del shell con la app y no devuelve el control hasta que la app se cierra; corrido en primer plano, se queda esperando para siempre. Se agregan a la seccion "Build" de las reglas del repo las dos formas correctas: `--no-run` (compila, deploya y refresca el cache de iconos sin lanzar la app — la opcion por defecto cuando solo hace falta validar el build o revisar el bundle) o lanzarlo en segundo plano cuando ademas se quiere la app corriendo. Se listan tambien los otros flags (`--force-clean`, `--parallel N`, `--no-deploy`, `--help`) y se aclara que el script ya refresca el cache de iconos del bundle, asi que no hace falta repetirlo a mano salvo que se toque el bundle despues de compilar.
+- [ Rules - Documentar que compilar_dev.sh toma la terminal y usar --no-run ]
+
 v0.96:
 - Icono de macOS: pasa al pipeline de Icon Composer. El icono se disena en `resources/icons/Alta/ThetaMacExplorer_v003.icon` y se compila con `actool`, en vez del `ThetaExplorer.icns` generado con el pipeline de `../LGA_IconLab`. Van **dos** recursos a `Contents/Resources/` y hacen falta los dos: `Assets.car`, que es el icono real y lo que consume macOS 26 via `CFBundleIconName`, y `AppIcon.icns` como fallback via `CFBundleIconFile`. Convertir el `.icon` a un `.icns` suelto y descartar el CAR reintroduce el problema de tamano en Cmd+Tab. El `.icns` se genera con `--standalone-icon-behavior all`: por defecto `actool` mete solo 4 representaciones y llega hasta 256 px, con el flag son 10 y llega a 1024. `CMakeLists.txt` copia ambos y avisa con `message(WARNING)` si falta el CAR, porque sin el el icono cae al fallback sin romper el build. `cmake/Info.plist.in` suma `CFBundleIconName`. Se aprovecha para resincronizar la version: el `project(... VERSION ...)` estaba en `0.93` mientras el ChangeLog ya iba por `v0.95`, o sea las dos entradas anteriores no habian bumpeado el CMakeLists.
 - [ Icono - El icono de macOS pasa a Icon Composer con Assets.car y icns de fallback ]
