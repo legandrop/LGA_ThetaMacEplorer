@@ -1,6 +1,10 @@
 # ChangeLog — LGA ThetaMacExplorer
 
-v1.00:
+v0.992:
+- Versionado: el formato pasa de **2 a 3 decimales** (`0.XXX`), y el bump-per-entrada de `+0.01` a `+0.001`. Con 2 decimales la app venia en `0.99`, asi que **la entrada siguiente —cualquiera— se llevaba puesto el `1.00`**: la de line endings de aca abajo lo hizo, y un commit de tooling no puede ser el que declare el hito. Esa entrada se renumera a `v0.991` (mismo contenido, solo el numero) y el `1.00` queda libre para cuando Lega decida que la app lo merece. Se actualiza la regla del repo y el `project(... VERSION ...)` del `CMakeLists.txt`, que es la unica fuente de verdad del numero.
+- [ Repo - Versionado de 3 decimales ]
+
+v0.991:
 - Repo: el repo no tenia `.gitattributes`, asi que cada archivo quedaba con los finales de linea de la maquina que lo escribio y git no normalizaba nada. Se agrega la politica LGA —LF por defecto, CRLF solo en `.bat`/`.cmd`/`.ps1`— en `.gitattributes` mas un `.editorconfig` que hace que el editor los escriba bien antes de que git los vea. **No hizo falta renormalizar**: el indice ya estaba 100% en LF, y `git add --renormalize .` dio cero archivos, asi que no hay commit mecanico ni `.git-blame-ignore-revs`. Lo unico que estaba mal era el disco: un `.bat` tenia LF y ahora quedo en CRLF. La regla se suma ademas a las reglas del repo, porque `.gitattributes` resuelve el caso automatico pero no impide que un editor reescriba un archivo entero.
 - [ Repo - Politica de line endings ]
 
