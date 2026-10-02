@@ -17,11 +17,13 @@ private:
     QLabel* makeKey(const QString& text);
     QLabel* makeValue();
     void    setRow(QLabel* val, const QString& text);
+    void    setDimensions(int width, int height);
 
     QLabel* m_nameVal  = nullptr;
     QLabel* m_typeVal  = nullptr;
     QLabel* m_sizeVal  = nullptr;
     QLabel* m_dateVal  = nullptr;
     QLabel* m_dimVal   = nullptr;
+    class QFormLayout* m_form = nullptr;
     QLabel* m_pathVal  = nullptr;
 };

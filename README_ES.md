@@ -6,6 +6,8 @@ Explorá y descargá las fotos y videos de una cámara **RICOH THETA** desde tu 
 Pensada para trabajar con HDRIs: cada secuencia HDR aparece como **un solo ítem**, con la
 vista previa de la exposición del medio, y se ve de un vistazo qué sets ya descargaste.
 
+![ThetaMacExplorer con una RICOH THETA Z1 conectada: cada set HDR en un solo tile, los badges Saved y Partial y la vista previa del set seleccionado](doc/images/thetamacexplorer_main.jpg)
+
 ## Qué hace
 
 - **Cada set HDR es un ítem.** Una secuencia de exposiciones (JPG o DNG) se agrupa en un
@@ -79,6 +81,12 @@ Hace falta Xcode command line tools, CMake y Qt 6.5.3 en `~/Qt/6.5.3/macos`.
 
 compila un binario universal (arm64 + x86_64) en `build/` y lo lanza. `./deploy.sh` compila
 la versión Release y arma el DMG.
+
+## Créditos
+
+Los HDRIs de la captura son de [Poly Haven](https://polyhaven.com) (CC0): Spiaggia di Mondello,
+Sunflowers, Venice Sunset, Golden Gate Hills, Autumn Park, The Sky Is On Fire, Shanghai Bund,
+Canary Wharf, Fireplace y Photo Studio Loft Hall.
 
 ## Autor
 

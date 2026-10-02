@@ -6,6 +6,8 @@ Browse and download the photos and videos on a **RICOH THETA** camera from your 
 USB. Made for HDRI work: each bracketed HDR sequence shows up as **one item**, previewed
 with its middle exposure, and you can see at a glance which sets you already downloaded.
 
+![ThetaMacExplorer with a RICOH THETA Z1 connected: HDR sets as single tiles, Saved and Partial badges, and the preview of the selected set](doc/images/thetamacexplorer_main.jpg)
+
 ## Features
 
 - **HDR sets as a single item.** A bracketed sequence (JPG or DNG) is grouped into one
@@ -78,6 +80,12 @@ Requires Xcode command line tools, CMake and Qt 6.5.3 at `~/Qt/6.5.3/macos`.
 
 builds a universal binary (arm64 + x86_64) in `build/` and launches it. `./deploy.sh`
 builds the Release version and packages the DMG.
+
+## Credits
+
+The HDRIs in the screenshot are from [Poly Haven](https://polyhaven.com) (CC0): Spiaggia di
+Mondello, Sunflowers, Venice Sunset, Golden Gate Hills, Autumn Park, The Sky Is On Fire,
+Shanghai Bund, Canary Wharf, Fireplace and Photo Studio Loft Hall.
 
 ## Author
 

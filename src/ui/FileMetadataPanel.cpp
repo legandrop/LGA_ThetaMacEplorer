@@ -33,6 +33,7 @@ FileMetadataPanel::FileMetadataPanel(QWidget* parent)
     outer->addWidget(title);
 
     auto* form = new QFormLayout();
+    m_form = form;
     form->setContentsMargins(0, 0, 0, 0);
     form->setSpacing(4);
     form->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -74,6 +75,15 @@ QLabel* FileMetadataPanel::makeValue()
     return l;
 }
 
+void FileMetadataPanel::setDimensions(int width, int height)
+{
+    // El bridge todavia no lee las dimensiones de la camara (quedan en 0): sin dato la fila
+    // se oculta, en vez de mostrar siempre un guion.
+    const bool known = width > 0 && height > 0;
+    m_dimVal->setText(known ? QString("%1 × %2").arg(width).arg(height) : QString());
+    m_form->setRowVisible(m_dimVal, known);
+}
+
 void FileMetadataPanel::setRow(QLabel* val, const QString& text)
 {
     if (val) val->setText(text);
@@ -97,10 +107,7 @@ void FileMetadataPanel::showMetadata(const MediaAssetGroup& group)
         setRow(m_dateVal, file.creationDate.isValid()
                ? file.creationDate.toString("yyyy-MM-dd  hh:mm:ss")
                : "—");
-        QString dims = (file.width > 0 && file.height > 0)
-                       ? QString("%1 × %2").arg(file.width).arg(file.height)
-                       : "—";
-        setRow(m_dimVal, dims);
+        setDimensions(file.width, file.height);
         setRow(m_pathVal, file.devicePath.isEmpty() ? "—" : file.devicePath);
         return;
     }
@@ -116,7 +123,9 @@ void FileMetadataPanel::showMetadata(const MediaAssetGroup& group)
     setRow(m_dateVal, group.captureTime.isValid()
            ? group.captureTime.toString("yyyy-MM-dd  hh:mm:ss")
            : "—");
-    setRow(m_dimVal, QString("%1 images").arg(group.files.size()));
+    // La cantidad de imagenes ya esta en Type ("HDR JPG · 5"); aca va la resolucion, como en
+    // un archivo suelto (antes decia "5 images" debajo de "Size (px)").
+    setDimensions(group.representative.width, group.representative.height);
     setRow(m_pathVal, group.representative.devicePath.isEmpty() ? "—" : group.representative.devicePath);
 }
 
@@ -126,7 +135,7 @@ void FileMetadataPanel::showMultipleSelection(int count)
     setRow(m_typeVal, "—");
     setRow(m_sizeVal, "—");
     setRow(m_dateVal, "—");
-    setRow(m_dimVal,  "—");
+    setDimensions(0, 0);
     setRow(m_pathVal, "—");
 }
 
@@ -136,6 +145,6 @@ void FileMetadataPanel::clearMetadata()
     setRow(m_typeVal, "—");
     setRow(m_sizeVal, "—");
     setRow(m_dateVal, "—");
-    setRow(m_dimVal,  "—");
+    setDimensions(0, 0);
     setRow(m_pathVal, "—");
 }

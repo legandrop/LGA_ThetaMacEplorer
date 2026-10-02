@@ -1,5 +1,10 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.997:
+- README: captura de la ventana principal (`doc/images/thetamacexplorer_main.jpg`) en los dos idiomas, con una sesion verosimil de una Z1: sets HDR JPG y DNG, badges Saved y Partial, un video y la vista previa del set seleccionado. Los thumbnails son HDRIs CC0 de Poly Haven, acreditados en el README. Se genero con la UI real (fuentes del repo, servicio de camara simulado) dibujada fuera de pantalla.
+- Bug: con un set HDR seleccionado, «File Info» mostraba «Size (px): 5 images». La cantidad de imagenes ya esta en Type («HDR JPG · 5»); la fila pasa a mostrar la resolucion, como en un archivo suelto. Pero el bridge (`ThetaBridge.mm`) nunca carga ancho y alto: los deja en 0 para no pedir metadata durante la enumeracion. Asi que, mientras no haya dato, la fila «Size (px)» se oculta en vez de mostrar siempre un guion. Leer `ICCameraFile.width/height` queda pendiente de probar con la camara conectada.
+- [ README - Captura con HDRIs + fix Size (px) de los sets ]
+
 v0.996:
 - Deploy: `deploy.sh` nuevo, de un solo paso. Pregunta al principio si armar el ZIP, el DMG y si publicar, y despues compila Release universal en `build-release/` (`compilar_dev.sh --release`, arbol separado que no toca la cache de desarrollo), copia el bundle a `deploy/`, valida que todo sea universal, firma (identidad estable `LGA Code Signing` si esta, si no ad-hoc), arma y verifica el ZIP (symlinks y firma) y el DMG, y si se confirma crea el tag `v<version>` y el release en este mismo repo, que es publico. Antes de compilar chequea lo que haria fallar la publicacion (gh, cuenta de git, working tree limpio, `main` igual a `origin/main`), y la publicacion pide una confirmacion final que por defecto es no. Esquema de LGA_FrameRev y LGA_Calmate.
 - `create_dmg.sh` copiado de LGA_Calmate, con `dmgbuild` vendorizado (Python puro, no instala nada), fondo oscuro versionado en `resources/dmg/` y un `Read Me.txt` en ingles con el `sudo xattr -cr` para abrir la app sin notarizar.
