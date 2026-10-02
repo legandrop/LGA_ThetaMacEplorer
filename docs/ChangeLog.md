@@ -1,5 +1,9 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.993:
+- Repo: el repo es publico y versionaba sus reglas internas de trabajo, con el script que las sincronizaba y su hook; salen del repo. Ademas se limpia la historia: se sacan de todos los commits esas reglas, la carpeta `build/` y los `.DS_Store` versionados al principio (con rutas de la maquina) y una ruta personal de `doc/`, y todos los commits quedan con la cuenta de GitHub correcta. Las entradas viejas de este changelog que describian esas reglas se reescribieron en la misma pasada. Cambian todos los hashes.
+- [ Repo - Reglas internas fuera del repo publico e historia limpia ]
+
 v0.992:
 - Versionado: el formato pasa de **2 a 3 decimales** (`0.XXX`), y el bump-per-entrada de `+0.01` a `+0.001`. Con 2 decimales la app venia en `0.99`, asi que **la entrada siguiente —cualquiera— se llevaba puesto el `1.00`**: la de line endings de aca abajo lo hizo, y un commit de tooling no puede ser el que declare el hito. Esa entrada se renumera a `v0.991` (mismo contenido, solo el numero) y el `1.00` queda libre para cuando Lega decida que la app lo merece. Se actualiza la regla del repo y el `project(... VERSION ...)` del `CMakeLists.txt`, que es la unica fuente de verdad del numero.
 - [ Repo - Versionado de 3 decimales ]
