@@ -21,8 +21,11 @@ Este directorio centraliza la documentacion funcional y tecnica del proyecto.
 - `hdr-grouping-observed-patterns.md`
   Resume el patron real observado en el catalogo exportado de la Z1 y la regla de agrupacion implementada a partir de esa evidencia.
 
+- `ui.md`
+  Paleta y QSS con variables, fuente Inter embebida, iconos SVG, toolbar, estados vacios, carteles de confirmacion, avisos flotantes y Help.
+
 - `session-and-download-behavior.md`
-  Documenta persistencia de ventana, carpeta de descarga, logo, badge de descargado y la estructura final de subcarpetas por grupo.
+  Documenta persistencia de ventana y settings, carpeta de descarga, badges Saved/Partial, los carteles de descargar y borrar, los avisos y la estructura final de subcarpetas por grupo.
 
 ## Criterio
 

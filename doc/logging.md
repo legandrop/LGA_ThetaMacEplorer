@@ -43,7 +43,7 @@ Archivos principales:
 
 ## Defaults
 
-- archivo: `/tmp/ThetaMacExplorer.log`
+- archivo: `~/Library/Logs/LGA/ThetaMacExplorer/debug.log`, la ubicacion de las apps LGA (antes de v0.994 iba a `/tmp/ThetaMacExplorer.log`, que se borraba al reiniciar). La ruta la arma `AppPaths::defaultLogFile()` y el Help la muestra en «Paths».
 - nivel: `debug`
 - categorias: `all`
 - rotacion: `5 MB`

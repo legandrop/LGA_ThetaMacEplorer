@@ -1,4 +1,5 @@
 #include "thetaexplorer/Logger.h"
+#include "thetaexplorer/AppPaths.h"
 
 #include <QDateTime>
 #include <QDir>
@@ -123,7 +124,7 @@ void Logger::loadConfiguration()
 {
     const QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
 
-    m_logFilePath = env.value("THETA_LOG_FILE", "/tmp/ThetaMacExplorer.log");
+    m_logFilePath = env.value("THETA_LOG_FILE", AppPaths::defaultLogFile());
     m_minLevel = parseLogLevel(env.value("THETA_LOG_LEVEL", "debug"));
 
     const QString categoriesEnv = env.value("THETA_LOG_CATEGORIES", "all");

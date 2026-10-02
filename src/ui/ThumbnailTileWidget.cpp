@@ -1,5 +1,7 @@
 #include "thetaexplorer/ThumbnailTileWidget.h"
 #include "thetaexplorer/ColorUtils.h"
+#include "thetaexplorer/UiIcons.h"
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPainter>
 #include <QMouseEvent>
@@ -9,11 +11,25 @@
 #include <QDateTime>
 #include <QStyle>
 
+namespace {
+// Colores que se pintan por codigo (glyphs y el fondo del tile); el resto va por QSS.
+constexpr auto kBadgeSavedText   = "#eaf7ea";
+constexpr auto kBadgePartialText = "#fff3d6";
+constexpr auto kVideoColor       = "#8ab4ff";
+constexpr auto kDateOldColor     = "#8f8f8f";
+constexpr auto kDateFutureColor  = "#8ae88f";
+constexpr auto kTileBg           = "#1d1d1d";
+constexpr auto kTileBgHover      = "#222222";
+constexpr auto kTileBgSelected   = "#2a2040";
+constexpr auto kTileBorder       = "#2e2e2e";
+constexpr auto kTileBorderHover  = "#555555";
+}
+
 ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* parent)
     : QWidget(parent)
     , m_group(group)
 {
-    setFixedSize(160, 214);
+    setFixedSize(160, 200);
     setObjectName("thumbnailTile");
     setCursor(Qt::PointingHandCursor);
 
@@ -26,46 +42,44 @@ ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* 
     m_thumb->setFixedSize(148, 120);
     m_thumb->setAlignment(Qt::AlignCenter);
     m_thumb->setObjectName("tileThumb");
-    m_thumb->setStyleSheet(
-        "background-color: #111111; border-radius: 3px;"
-    );
 
+    // Badge de estado local: descargado entero o en parte.
+    const qreal dpr = devicePixelRatioF();
     m_downloadedBadge = new QLabel(m_thumb);
-    m_downloadedBadge->setGeometry(110, 6, 32, 18);
-    m_downloadedBadge->setAlignment(Qt::AlignCenter);
-    m_downloadedBadge->setText("DL");
-    m_downloadedBadge->setStyleSheet(
-        "background:#2e7d32; color:#eaf7ea; border-radius:9px; "
-        "font-size:9px; font-weight:bold; padding:1px 4px;"
-    );
-    if (group.allFilesDownloaded) {
-        m_downloadedBadge->setText("DL");
-        m_downloadedBadge->setStyleSheet(
-            "background:#2e7d32; color:#eaf7ea; border-radius:9px; "
-            "font-size:9px; font-weight:bold; padding:1px 4px;"
-        );
-        m_downloadedBadge->setVisible(true);
-    } else if (group.hasPartialLocalContent) {
-        m_downloadedBadge->setText("PART");
-        m_downloadedBadge->setStyleSheet(
-            "background:#8a5b12; color:#fff3d6; border-radius:9px; "
-            "font-size:8px; font-weight:bold; padding:1px 4px;"
-        );
+    m_downloadedBadge->setObjectName("tileBadge");
+    m_downloadedBadge->setTextFormat(Qt::RichText);
+    if (group.allFilesDownloaded || group.hasPartialLocalContent) {
+        const bool full = group.allFilesDownloaded;
+        m_downloadedBadge->setProperty("state", full ? "saved" : "partial");
+        auto* badgeLayout = new QHBoxLayout(m_downloadedBadge);
+        badgeLayout->setContentsMargins(5, 0, 6, 0);
+        badgeLayout->setSpacing(3);
+        auto* badgeIcon = new QLabel(m_downloadedBadge);
+        badgeIcon->setPixmap(UiIcons::pixmap(full ? "check" : "partial", 10,
+                                             QColor(full ? kBadgeSavedText : kBadgePartialText), dpr));
+        auto* badgeText = new QLabel(full ? "Saved" : "Partial", m_downloadedBadge);
+        badgeText->setObjectName("tileBadgeText");
+        badgeText->setProperty("state", full ? "saved" : "partial");
+        badgeLayout->addWidget(badgeIcon);
+        badgeLayout->addWidget(badgeText);
+        // Polish antes de medir: la fuente chica del texto sale del QSS.
+        badgeText->ensurePolished();
+        m_downloadedBadge->ensurePolished();
+        // El tamano sale del layout: QLabel::sizeHint() ignora el layout de sus hijos, asi
+        // que adjustSize() lo dejaba en 8 px de ancho.
+        m_downloadedBadge->setFixedSize(badgeLayout->sizeHint().width(), 18);
+        m_downloadedBadge->move(m_thumb->width() - m_downloadedBadge->width() - 6, 6);
         m_downloadedBadge->setVisible(true);
     } else {
         m_downloadedBadge->setVisible(false);
     }
 
-    // Show file type icon initially
+    // Placeholder hasta que llega el thumbnail
     if (group.isVideo) {
-        m_thumb->setText("▶");
-        m_thumb->setStyleSheet("background:#111; border-radius:3px; color:#774dcb; font-size:28px;");
+        m_thumb->setPixmap(UiIcons::pixmap("play", 30, QColor(kVideoColor), dpr));
     } else if (group.isRaw) {
         m_thumb->setText("RAW");
-        m_thumb->setStyleSheet("background:#111; border-radius:3px; color:#e8a838; font-size:16px; font-weight:bold;");
-    } else {
-        m_thumb->setText("⬜");
-        m_thumb->setStyleSheet("background:#111; border-radius:3px; color:#333; font-size:28px;");
+        m_thumb->setProperty("placeholder", "raw");
     }
 
     // File name
@@ -78,34 +92,20 @@ ThumbnailTileWidget::ThumbnailTileWidget(const MediaAssetGroup& group, QWidget* 
     // Elide long names
     QFontMetrics fm(m_nameLabel->font());
     m_nameLabel->setText(fm.elidedText(group.displayTitle, Qt::ElideMiddle, 148));
-    m_nameLabel->setStyleSheet("color: #888888; font-size: 11px; background: transparent;");
 
     // Type badge
     m_typeLabel = new QLabel(this);
+    m_typeLabel->setObjectName("tileType");
     m_typeLabel->setAlignment(Qt::AlignHCenter);
     m_typeLabel->setFixedWidth(148);
-
     m_typeLabel->setText(group.subtitle);
-
-    QString typeColor = "#555555";
-    if (group.isVideo) {
-        typeColor = "#8ab4ff";
-    } else if (group.isRaw) {
-        typeColor = "#e0a458";
-    } else {
-        typeColor = "#7dd3b0";
-    }
-    m_typeLabel->setStyleSheet(
-        QString("color: %1; font-size: 10px; font-weight: 700; background: transparent;")
-            .arg(typeColor)
-    );
+    m_typeLabel->setProperty("kind", group.isVideo ? "video" : (group.isRaw ? "raw" : "jpg"));
 
     m_datesLabel = new QLabel(this);
+    m_datesLabel->setObjectName("tileDate");
     m_datesLabel->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     m_datesLabel->setFixedWidth(148);
-    m_datesLabel->setWordWrap(true);
     m_datesLabel->setTextFormat(Qt::RichText);
-    m_datesLabel->setStyleSheet("font-size: 10px; font-weight: 600; background: transparent;");
     m_datesLabel->setText(buildDateHtml());
 
     layout->addWidget(m_thumb);
@@ -127,25 +127,25 @@ QString ThumbnailTileWidget::buildDateHtml() const
 
     const QString dayLine = timestamp.toString("ddd d MMMM");
     const QString timeLine = timestamp.toString("HH:mm");
-    return QString("<span style=\"color:%1;\">%2</span><br/><span style=\"color:%1;\">%3</span>")
+    return QString("<span style=\"color:%1;\">%2 &middot; %3</span>")
         .arg(color, dayLine, timeLine);
 }
 
 QString ThumbnailTileWidget::ageColor(const QDateTime& timestamp) const
 {
     if (!timestamp.isValid()) {
-        return "#5e5e5e";
+        return kDateOldColor;
     }
 
     const QDateTime now = QDateTime::currentDateTime();
     const qint64 ageSecs = timestamp.secsTo(now);
     if (ageSecs < 0) {
-        return "#8ae88f";
+        return kDateFutureColor;
     }
 
     const double ageHours = ageSecs / 3600.0;
     if (ageHours > 28.0) {
-        return "#5e5e5e";
+        return kDateOldColor;
     }
 
     const double t = qBound(0.0, ageHours / 28.0, 1.0);
@@ -172,7 +172,6 @@ void ThumbnailTileWidget::setThumbnail(const QPixmap& pixmap)
         m_thumb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation
     );
     m_thumb->setPixmap(scaled);
-    m_thumb->setStyleSheet("background:#111111; border-radius:3px;");
 }
 
 void ThumbnailTileWidget::setSelected(bool s)
@@ -198,8 +197,8 @@ void ThumbnailTileWidget::paintEvent(QPaintEvent* e)
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-    QColor bg    = m_selected ? QColor("#2a2040") : (m_hovered ? QColor("#222222") : QColor("#1d1d1d"));
-    QColor border = m_selected ? QColor("#774dcb") : (m_hovered ? QColor("#555555") : QColor("#2e2e2e"));
+    QColor bg    = m_selected ? QColor(kTileBgSelected) : (m_hovered ? QColor(kTileBgHover) : QColor(kTileBg));
+    QColor border = m_selected ? QColor(ColorUtils::VIOLETA_CLARO) : (m_hovered ? QColor(kTileBorderHover) : QColor(kTileBorder));
     int bw = m_selected ? 2 : 1;
 
     p.setPen(QPen(border, bw));

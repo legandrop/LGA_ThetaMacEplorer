@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QCloseEvent>
+#include <QPointer>
 #include "thetaexplorer/CameraFileInfo.h"
 #include "thetaexplorer/MediaAssetGroup.h"
 
@@ -15,6 +16,10 @@ class ThumbnailGridWidget;
 class PreviewPanel;
 class FileMetadataPanel;
 class QTimer;
+class QStackedWidget;
+class StatusDot;
+class EmptyStateWidget;
+class MessagePopover;
 
 class MainWindow : public QMainWindow
 {
@@ -38,11 +43,13 @@ private slots:
     void onDeleteCompleted(const QStringList& deletedPaths);
     void onErrorOccurred(const QString& message);
     void onBatteryLevelChanged(int percent, bool available);
+    void onHelpRequested();
 
 private:
     void setupUI();
+    void setupMenus();
     void setupConnections();
-    void applyStyles();
+    void applyButtonIcons();
     void loadSettings();
     void saveSettings() const;
     void updateFolderLabel();
@@ -52,7 +59,13 @@ private:
     QString groupDownloadFolderPath(const MediaAssetGroup& group) const;
     QList<CameraFileInfo> selectedFilesFlattened() const;
     void updateButtonStates();
-    void setStatusMessage(const QString& msg, const QString& color = "#b2b2b2");
+    void finishDownloadBatch();
+    void updateGridPage();
+    // Barra de estado. `color` vacio = color secundario de la paleta.
+    void setStatusMessage(const QString& msg, const QString& color = QString());
+    // Aviso flotante ademas de la barra de estado. Los errores no se cierran solos.
+    void notifyError(const QString& msg);
+    void notifySuccess(const QString& msg);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -66,13 +79,18 @@ protected:
     QSplitter*           m_rightSplitter  = nullptr;
     ThumbnailGridWidget* m_gridWidget     = nullptr;
     PreviewPanel*        m_previewPanel   = nullptr;
+    QStackedWidget*      m_gridStack      = nullptr;
+    EmptyStateWidget*    m_emptyState     = nullptr;
     FileMetadataPanel*   m_metaPanel      = nullptr;
 
     // Toolbar
     QWidget*             m_toolbar        = nullptr;
-    QLabel*              m_logoLabel      = nullptr;
+    StatusDot*           m_cameraDot      = nullptr;
     QLabel*              m_cameraLabel    = nullptr;
+    QWidget*             m_batteryBox     = nullptr;
+    QLabel*              m_batteryIcon    = nullptr;
     QLabel*              m_batteryLabel   = nullptr;
+    QPushButton*         m_helpBtn        = nullptr;
     QPushButton*         m_folderBtn      = nullptr;
     QPushButton*         m_refreshBtn     = nullptr;
     QLabel*              m_folderLabel    = nullptr;
@@ -93,4 +111,8 @@ protected:
     int                  m_downloadTotal  = 0;
     int                  m_downloadDone   = 0;
     bool                 m_downloadInProgress = false;
+    bool                 m_catalogLoaded  = false;
+    int                  m_downloadErrors = 0;
+    QString              m_lastDownloadError;
+    QPointer<MessagePopover> m_errorPopover;
 };

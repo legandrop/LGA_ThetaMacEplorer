@@ -20,13 +20,7 @@ FileMetadataPanel::FileMetadataPanel(QWidget* parent)
     : QWidget(parent)
 {
     setObjectName("metadataPanel");
-    setStyleSheet(
-        "QWidget#metadataPanel {"
-        "  background: #1a1a1a;"
-        "  border-top: 1px solid #222222;"
-        "  border-left: 1px solid #222222;"
-        "}"
-    );
+    setAttribute(Qt::WA_StyledBackground);
     setMinimumHeight(140);
 
     auto* outer = new QVBoxLayout(this);
@@ -34,8 +28,8 @@ FileMetadataPanel::FileMetadataPanel(QWidget* parent)
     outer->setSpacing(6);
 
     // Title
-    auto* title = new QLabel("File Info", this);
-    title->setStyleSheet("color: #555555; font-size: 11px; font-weight: bold; letter-spacing: 1px;");
+    auto* title = new QLabel("FILE INFO", this);
+    title->setObjectName("metaTitle");
     outer->addWidget(title);
 
     auto* form = new QFormLayout();
@@ -50,12 +44,12 @@ FileMetadataPanel::FileMetadataPanel(QWidget* parent)
         form->addRow(k, val);
     };
 
-    addRow("Name:",     m_nameVal);
-    addRow("Type:",     m_typeVal);
-    addRow("Size:",     m_sizeVal);
-    addRow("Date:",     m_dateVal);
-    addRow("Size (px):", m_dimVal);
-    addRow("Path:",     m_pathVal);
+    addRow("Name",     m_nameVal);
+    addRow("Type",     m_typeVal);
+    addRow("Size",     m_sizeVal);
+    addRow("Date",     m_dateVal);
+    addRow("Size (px)", m_dimVal);
+    addRow("Path",     m_pathVal);
 
     outer->addLayout(form);
     outer->addStretch();
@@ -66,7 +60,7 @@ FileMetadataPanel::FileMetadataPanel(QWidget* parent)
 QLabel* FileMetadataPanel::makeKey(const QString& text)
 {
     auto* l = new QLabel(text, this);
-    l->setStyleSheet("color: #444444; font-size: 11px;");
+    l->setObjectName("metaKey");
     l->setFixedWidth(70);
     return l;
 }
@@ -74,7 +68,7 @@ QLabel* FileMetadataPanel::makeKey(const QString& text)
 QLabel* FileMetadataPanel::makeValue()
 {
     auto* l = new QLabel(this);
-    l->setStyleSheet("color: #888888; font-size: 11px;");
+    l->setObjectName("metaValue");
     l->setWordWrap(false);
     l->setTextInteractionFlags(Qt::TextSelectableByMouse);
     return l;
@@ -128,7 +122,7 @@ void FileMetadataPanel::showMetadata(const MediaAssetGroup& group)
 
 void FileMetadataPanel::showMultipleSelection(int count)
 {
-    setRow(m_nameVal, QString("%1 files selected").arg(count));
+    setRow(m_nameVal, QString("%1 items selected").arg(count));
     setRow(m_typeVal, "—");
     setRow(m_sizeVal, "—");
     setRow(m_dateVal, "—");

@@ -61,7 +61,7 @@ if [ ! -f "build/local_bin/otool-classic" ]; then
 fi
 export PATH="$PWD/build/local_bin:$PATH"
 
-if [ ! -d "build/$APP_NAME.app/Contents/Frameworks" ] || [ ! -f "build/$APP_NAME.app/Contents/PlugIns/platforms/libqcocoa.dylib" ]; then
+if [ ! -d "build/$APP_NAME.app/Contents/Frameworks" ] || [ ! -f "build/$APP_NAME.app/Contents/PlugIns/platforms/libqcocoa.dylib" ] || [ ! -d "build/$APP_NAME.app/Contents/Frameworks/QtSvg.framework" ]; then
     "$QT_PATH/bin/macdeployqt" "build/$APP_NAME.app"
 
     # Manual platform plugin copy if macdeployqt missed it

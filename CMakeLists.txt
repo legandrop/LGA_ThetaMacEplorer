@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ThetaMacExplorer VERSION 0.993 LANGUAGES CXX OBJCXX)
+project(ThetaMacExplorer VERSION 0.994 LANGUAGES CXX OBJCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -52,7 +52,7 @@ else()
     set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.5.3/macos")
 endif()
 
-find_package(Qt6 COMPONENTS Core Gui Widgets Concurrent REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Concurrent Svg REQUIRED)
 
 if(APPLE)
     # Qt6 usa el interface target WrapOpenGL::WrapOpenGL para OpenGL en macOS
@@ -91,9 +91,17 @@ set(SOURCES
     src/ui/ThumbnailTileWidget.cpp
     src/ui/PreviewPanel.cpp
     src/ui/FileMetadataPanel.cpp
-    src/ui/ConfirmDeleteDialog.cpp
+    src/ui/ConfirmDialog.cpp
+    src/ui/HelpDialog.cpp
+    src/ui/StatusWidgets.cpp
+    src/ui/popover/MessagePopover.cpp
+    src/ui/popover/PopoverCloseButton.cpp
+    src/ui/popover/PopoverCountdownRail.cpp
+    src/ui/popover/PopoverShadow.cpp
     src/utils/Logger.cpp
     src/utils/ColorUtils.cpp
+    src/utils/UiIcons.cpp
+    src/utils/AppPaths.cpp
 )
 
 # ---- Objective-C++ bridge: SKIP_AUTOMOC prevents moc from processing .mm ----
@@ -119,7 +127,15 @@ set(HEADERS
     include/thetaexplorer/PreviewPanel.h
     include/thetaexplorer/FileMetadataPanel.h
     include/thetaexplorer/DownloadManager.h
-    include/thetaexplorer/ConfirmDeleteDialog.h
+    include/thetaexplorer/ConfirmDialog.h
+    include/thetaexplorer/HelpDialog.h
+    include/thetaexplorer/StatusWidgets.h
+    include/thetaexplorer/UiIcons.h
+    include/thetaexplorer/AppPaths.h
+    include/thetaexplorer/popover/MessagePopover.h
+    include/thetaexplorer/popover/PopoverCloseButton.h
+    include/thetaexplorer/popover/PopoverCountdownRail.h
+    include/thetaexplorer/popover/PopoverShadow.h
     include/thetaexplorer/Logger.h
 )
 
@@ -149,6 +165,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Concurrent
+    Qt6::Svg
 )
 
 if(APPLE)

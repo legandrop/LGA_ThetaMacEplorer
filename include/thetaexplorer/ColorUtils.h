@@ -1,21 +1,27 @@
 #pragma once
 #include <QString>
-#include <QColor>
 
+// Paleta de la app. Los nombres y valores base son los de COLOR_VARS de LGA_Base_QT_C_Py;
+// los que no existen en el Base (estados) se agregan abajo. El QSS (resources/styles/
+// dark_theme.qss) usa estos mismos nombres como variables y loadStyleSheet() los reemplaza.
 namespace ColorUtils {
-    // Base dark palette (matches other LGA_ projects)
-    inline constexpr auto BG_DARK      = "#161616";
-    inline constexpr auto BG_PANEL     = "#1d1d1d";
-    inline constexpr auto BG_HOVER     = "#252525";
-    inline constexpr auto TEXT_PRIMARY = "#b2b2b2";
-    inline constexpr auto TEXT_DIM     = "#666666";
-    inline constexpr auto ACCENT       = "#774dcb";
-    inline constexpr auto ACCENT_HOVER = "#8e6ddf";
-    inline constexpr auto BORDER       = "#333333";
-    inline constexpr auto BORDER_FOCUS = "#555555";
-    inline constexpr auto SUCCESS      = "#4caf7d";
-    inline constexpr auto ERROR_COLOR  = "#cf6679";
-    inline constexpr auto WARNING      = "#e8a838";
+    // Base LGA
+    inline constexpr auto BG_PRINCIPAL     = "#161616";
+    inline constexpr auto BG_ITEMS         = "#1d1d1d";
+    inline constexpr auto BG_TABS          = "#101010";
+    inline constexpr auto BORDER_PRINCIPAL = "#303030";
+    inline constexpr auto TXT_PRINCIPAL    = "#b2b2b2";
+    inline constexpr auto TXT_SECUNDARIO   = "#8f8f8f";
+    inline constexpr auto TXT_TITULO       = "#cccccc";
+    inline constexpr auto VIOLETA_OSCURO   = "#443a91";
+    inline constexpr auto VIOLETA_CLARO    = "#774dcb";
 
-    QString getStyleSheet();
+    // Estados (barra de estado, bateria, avisos)
+    inline constexpr auto SUCCESS     = "#4caf7d";
+    inline constexpr auto WARNING     = "#e0a458";
+    inline constexpr auto ERROR_COLOR = "#cf6679";
+
+    // Lee el QSS de recursos, reemplaza las variables de color y lo devuelve.
+    // Si el recurso no se puede abrir devuelve un string vacio y deja un warning en el log.
+    QString loadStyleSheet();
 }

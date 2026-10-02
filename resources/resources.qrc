@@ -1,5 +1,21 @@
 <RCC>
     <qresource prefix="/">
         <file>styles/dark_theme.qss</file>
+        <file>styles/message_popover.qss</file>
+        <file>fonts/Inter-Regular.ttf</file>
+        <file>fonts/Inter-Medium.ttf</file>
+        <file>fonts/Inter-Bold.ttf</file>
+        <file>icons/ui/battery.svg</file>
+        <file>icons/ui/camera_theta.svg</file>
+        <file>icons/ui/check.svg</file>
+        <file>icons/ui/download.svg</file>
+        <file>icons/ui/folder.svg</file>
+        <file>icons/ui/folder_check.svg</file>
+        <file>icons/ui/help.svg</file>
+        <file>icons/ui/keyboard.svg</file>
+        <file>icons/ui/partial.svg</file>
+        <file>icons/ui/play.svg</file>
+        <file>icons/ui/refresh.svg</file>
+        <file>icons/ui/trash.svg</file>
     </qresource>
 </RCC>

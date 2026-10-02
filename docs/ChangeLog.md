@@ -1,5 +1,23 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.994:
+- UI: la app se alinea con el resto de las apps LGA (detalle en `doc/ui.md`).
+  - **Help nuevo**: dialogo con nombre y version, «Developed by Lega Pugliese», link a lega.com.ar, atajos y rutas clicables de descargas, logs y settings. Se abre con el boton «?» de la toolbar, con Cmd+? y con «About ThetaMacExplorer» del menu de la app.
+  - **Borrar ya no confirma con Enter**: el foco arrancaba en «Delete», asi que Enter borraba de la camara sin vuelta atras. Ahora Enter y Esc cancelan, y el cartel dice cuantos archivos se borran en total (un set HDR son varios).
+  - **Bug: «Skip Existing» no salteaba nada.** Calculaba que bajar pero encolaba todos los grupos seleccionados igual. Ahora saltea los archivos que ya estan en disco con el mismo tamano y baja el resto (un set a medio bajar se completa), y es la opcion por defecto (Enter) del cartel. «Replace» y «Delete» quedan fuera del Tab: solo con click.
+  - Desconectar la camara con una descarga en curso, o con el cartel de archivos existentes abierto, ya no deja los botones trabados ni borra carpetas locales. Los errores de camara o de borrado ya no cortan un lote de descarga, y el aviso de fin de lote sale una sola vez.
+  - Al borrar se actualiza el catalogo sin esperar a que la camara lo vuelva a enumerar; si no queda nada aparece «The camera is empty».
+  - Carteles nuevos (`ConfirmDialog`) con el estilo de los dialogos del Player de MediaTools, sin contorno de foco; reemplazan al `QMessageBox` y al `ConfirmDeleteDialog`.
+  - Toolbar reordenada: estado de la camara y bateria a la izquierda, destino agrupado, Download con la cantidad seleccionada, Delete aparte y solo con borde, boton de Help. Iconos SVG monocromos en vez de emojis (`UiIcons`, suma `Qt6::Svg`; los scripts de compilacion re-deployan si el bundle no trae `QtSvg.framework`).
+  - Estados vacios en la grilla: sin camara («Connect your RICOH THETA», buscando) y camara sin archivos.
+  - Contraste: el texto secundario pasa de `#333`/`#444` (1.5:1 a 1.9:1) a `#8f8f8f` y 12 px; badges «Saved»/«Partial» con icono en vez de «DL»/«PART»; fecha y hora del tile en una linea.
+  - Inter embebida (el QSS la pedia pero no estaba en el bundle) con una sola familia declarada.
+  - Estilos: la paleta de `ColorUtils` toma los nombres de `COLOR_VARS` del Base y el QSS los usa como variables; se sacan los `setStyleSheet` con colores sueltos y el QSS duplicado en C++.
+  - Avisos flotantes (`MessagePopover`, portado de FileManagerS3) para errores y finales de lote: un solo aviso por descarga, los errores quedan hasta que se cierran.
+- Logs: pasan de `/tmp/ThetaMacExplorer.log`, que se borraba al reiniciar, a `~/Library/Logs/LGA/ThetaMacExplorer/debug.log`.
+- Settings: pasan del plist (`QSettings` nativo) a `~/Library/Application Support/LGA/ThetaMacExplorer/settings.ini`; la primera vez se migran solos. Se saca el `organizationDomain` `lga.com`.
+- [ UI - Help, carteles, toolbar e iconos al estilo LGA + fix Skip Existing ]
+
 v0.993:
 - Repo: el repo es publico y versionaba sus reglas internas de trabajo, con el script que las sincronizaba y su hook; salen del repo. Ademas se limpia la historia: se sacan de todos los commits esas reglas, la carpeta `build/` y los `.DS_Store` versionados al principio (con rutas de la maquina) y una ruta personal de `doc/`, y todos los commits quedan con la cuenta de GitHub correcta. Las entradas viejas de este changelog que describian esas reglas se reescribieron en la misma pasada. Cambian todos los hashes.
 - [ Repo - Reglas internas fuera del repo publico e historia limpia ]

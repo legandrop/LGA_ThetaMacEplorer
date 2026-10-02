@@ -5,9 +5,15 @@
 #include "thetaexplorer/PreviewPanel.h"
 #include "thetaexplorer/FileMetadataPanel.h"
 #include "thetaexplorer/DownloadManager.h"
-#include "thetaexplorer/ConfirmDeleteDialog.h"
+#include "thetaexplorer/ConfirmDialog.h"
+#include "thetaexplorer/HelpDialog.h"
+#include "thetaexplorer/StatusWidgets.h"
+#include "thetaexplorer/AppPaths.h"
 #include "thetaexplorer/ColorUtils.h"
+#include "thetaexplorer/UiIcons.h"
 #include "thetaexplorer/Logger.h"
+#include "thetaexplorer/popover/MessagePopover.h"
+#include <QAction>
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
@@ -16,18 +22,21 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QSplitter>
+#include <QStackedWidget>
 #include <QLabel>
+#include <QMenuBar>
 #include <QPushButton>
 #include <QProgressBar>
 #include <QStatusBar>
+#include <QStyle>
 #include <QSettings>
 #include <QFileInfo>
 #include <QFileInfoList>
+#include <QFontMetrics>
 #include <QRegularExpression>
 #include <QIcon>
 #include <QPixmap>
 #include <QDebug>
-#include <QMessageBox>
 #include <QScrollBar>
 
 namespace {
@@ -89,6 +98,41 @@ QString findMatchingLocalFilePath(const QString& folderPath, const QString& expe
 
 } // namespace
 
+
+namespace {
+
+// Colores de los glyphs de la toolbar (normal / deshabilitado).
+constexpr auto kIconNeutral         = "#b2b2b2";
+constexpr auto kIconNeutralDisabled = "#4a4a4a";
+constexpr auto kIconPrimary         = "#d6cbf5";
+constexpr auto kIconPrimaryDisabled = "#3a3a50";
+constexpr auto kIconDanger          = "#e7a3ae";
+constexpr auto kIconDangerDisabled  = "#40282e";
+constexpr int  kToolbarIconSize     = 15;
+constexpr int  kFolderLabelWidth    = 230;
+constexpr int  kLowBatteryPercent   = 20;
+
+QFrame* toolbarSeparator(QWidget* parent)
+{
+    auto* sep = new QFrame(parent);
+    sep->setObjectName("toolbarSeparator");
+    sep->setFixedSize(1, 22);
+    return sep;
+}
+
+QPushButton* toolbarButton(const QString& text, const char* objectName, QWidget* parent)
+{
+    auto* btn = new QPushButton(text, parent);
+    btn->setObjectName(objectName);
+    btn->setFixedHeight(30);
+    btn->setFocusPolicy(Qt::NoFocus);
+    btn->setCursor(Qt::PointingHandCursor);
+    btn->setIconSize(QSize(kToolbarIconSize, kToolbarIconSize));
+    return btn;
+}
+
+} // namespace
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -104,13 +148,16 @@ MainWindow::MainWindow(QWidget* parent)
     m_service = new ThetaCameraService(this);
 
     setupUI();
+    setupMenus();
     setupConnections();
-    applyStyles();
+    applyButtonIcons();
     loadSettings();
 
     // Start scanning for the camera
     m_service->start();
-    setStatusMessage("Searching for camera...", ColorUtils::TEXT_DIM);
+    onCameraDisconnected();
+    // La toolbar y la grilla ya dicen que se esta buscando la camara.
+    setStatusMessage(QString());
 }
 
 MainWindow::~MainWindow()
@@ -128,105 +175,76 @@ void MainWindow::setupUI()
     rootLayout->setSpacing(0);
 
     // ---- Toolbar ----
+    // Izquierda: estado de la camara y bateria. Despues: destino de las descargas.
+    // Derecha: progreso, acciones (Delete separado de Download) y el boton de Help.
     m_toolbar = new QWidget(this);
     m_toolbar->setObjectName("toolbar");
+    m_toolbar->setAttribute(Qt::WA_StyledBackground);
     m_toolbar->setFixedHeight(52);
-    m_toolbar->setStyleSheet(
-        "QWidget#toolbar {"
-        "  background: #1a1a1a;"
-        "  border-bottom: 1px solid #222222;"
-        "}"
-    );
 
     auto* tbLayout = new QHBoxLayout(m_toolbar);
     tbLayout->setContentsMargins(14, 0, 14, 0);
     tbLayout->setSpacing(10);
 
-    // Camera status indicator
-    m_logoLabel = new QLabel(this);
-    m_logoLabel->setFixedSize(24, 24);
-
-    m_cameraLabel = new QLabel("⬤  No camera connected", this);
-    m_cameraLabel->setStyleSheet("color: #444444; font-size: 13px;");
+    m_cameraDot = new StatusDot(this);
+    m_cameraLabel = new QLabel(this);
     m_cameraLabel->setObjectName("cameraLabel");
 
-    m_batteryLabel = new QLabel("Battery --", this);
-    m_batteryLabel->setStyleSheet("color: #555555; font-size: 12px;");
+    m_batteryBox = new QWidget(this);
+    m_batteryBox->setObjectName("batteryBox");
+    auto* batteryLayout = new QHBoxLayout(m_batteryBox);
+    batteryLayout->setContentsMargins(0, 0, 0, 0);
+    batteryLayout->setSpacing(5);
+    m_batteryIcon = new QLabel(m_batteryBox);
+    m_batteryLabel = new QLabel(m_batteryBox);
     m_batteryLabel->setObjectName("batteryLabel");
+    batteryLayout->addWidget(m_batteryIcon);
+    batteryLayout->addWidget(m_batteryLabel);
+    m_batteryBox->hide();
 
-    // Separator
-    auto* sep1 = new QFrame(this);
-    sep1->setFrameShape(QFrame::VLine);
-    sep1->setStyleSheet("color: #2a2a2a;");
-    sep1->setFixedWidth(1);
-
-    // Download folder button
-    m_folderBtn = new QPushButton("📁 Save to...", this);
-    m_folderBtn->setObjectName("folderBtn");
-    m_folderBtn->setFixedHeight(30);
-    m_folderBtn->setStyleSheet(
-        "QPushButton { background:#1d1d1d; color:#777; border:1px solid #2e2e2e; "
-        "border-radius:4px; padding:0 10px; font-size:12px; }"
-        "QPushButton:hover { background:#252525; color:#999; border-color:#444; }"
-    );
-
-    m_refreshBtn = new QPushButton("↻ Refresh", this);
-    m_refreshBtn->setObjectName("refreshBtn");
-    m_refreshBtn->setFixedHeight(30);
-    m_refreshBtn->setStyleSheet(
-        "QPushButton { background:#1d1d1d; color:#777; border:1px solid #2e2e2e; "
-        "border-radius:4px; padding:0 10px; font-size:12px; }"
-        "QPushButton:hover { background:#252525; color:#999; border-color:#444; }"
-    );
-
+    m_folderBtn = toolbarButton("Save to…", "toolbarButton", this);
     m_folderLabel = new QLabel(this);
-    m_folderLabel->setStyleSheet("color: #555555; font-size: 11px;");
-    m_folderLabel->setMaximumWidth(200);
-
+    m_folderLabel->setObjectName("folderLabel");
+    m_folderLabel->setFixedWidth(kFolderLabelWidth);
     updateFolderLabel();
-    connect(m_folderBtn, &QPushButton::clicked, this, &MainWindow::onBrowseFolderClicked);
 
-    tbLayout->addWidget(m_logoLabel);
-    tbLayout->addWidget(m_cameraLabel);
-    tbLayout->addWidget(m_batteryLabel);
-    tbLayout->addWidget(sep1);
-    tbLayout->addWidget(m_folderBtn);
-    tbLayout->addWidget(m_folderLabel);
-    tbLayout->addWidget(m_refreshBtn);
-    tbLayout->addStretch();
+    m_refreshBtn = toolbarButton(QString(), "iconButton", this);
+    m_refreshBtn->setFixedWidth(30);
+    m_refreshBtn->setAccessibleName("Refresh");
 
-    // Progress area (hidden by default)
     m_progressLabel = new QLabel(this);
-    m_progressLabel->setStyleSheet("color: #555555; font-size: 11px;");
+    m_progressLabel->setObjectName("progressLabel");
     m_progressLabel->hide();
-
     m_progressBar = new QProgressBar(this);
     m_progressBar->setRange(0, 100);
     m_progressBar->setFixedSize(120, 8);
+    m_progressBar->setTextVisible(false);
     m_progressBar->hide();
 
-    tbLayout->addWidget(m_progressLabel);
-    tbLayout->addWidget(m_progressBar);
-
-    auto* sep2 = new QFrame(this);
-    sep2->setFrameShape(QFrame::VLine);
-    sep2->setStyleSheet("color: #2a2a2a;");
-    sep2->setFixedWidth(1);
-    tbLayout->addWidget(sep2);
-
-    // Action buttons
-    m_downloadBtn = new QPushButton("↓ Download", this);
-    m_downloadBtn->setObjectName("downloadBtn");
-    m_downloadBtn->setFixedHeight(30);
+    m_downloadBtn = toolbarButton("Download", "downloadBtn", this);
     m_downloadBtn->setEnabled(false);
-
-    m_deleteBtn = new QPushButton("✕ Delete", this);
-    m_deleteBtn->setObjectName("deleteBtn");
-    m_deleteBtn->setFixedHeight(30);
+    m_deleteBtn = toolbarButton("Delete", "deleteBtn", this);
     m_deleteBtn->setEnabled(false);
 
-    tbLayout->addWidget(m_downloadBtn);
-    tbLayout->addWidget(m_deleteBtn);
+    m_helpBtn = toolbarButton(QString(), "helpBtn", this);
+    m_helpBtn->setFixedWidth(30);
+    m_helpBtn->setAccessibleName("Help");
+
+    tbLayout->addWidget(m_cameraDot, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_cameraLabel, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_batteryBox, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(toolbarSeparator(this), 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_folderBtn, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_folderLabel, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_refreshBtn, 0, Qt::AlignVCenter);
+    tbLayout->addStretch(1);
+    tbLayout->addWidget(m_progressLabel, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_progressBar, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_downloadBtn, 0, Qt::AlignVCenter);
+    tbLayout->addSpacing(14);
+    tbLayout->addWidget(m_deleteBtn, 0, Qt::AlignVCenter);
+    tbLayout->addWidget(toolbarSeparator(this), 0, Qt::AlignVCenter);
+    tbLayout->addWidget(m_helpBtn, 0, Qt::AlignVCenter);
 
     rootLayout->addWidget(m_toolbar);
 
@@ -235,9 +253,13 @@ void MainWindow::setupUI()
     m_mainSplitter->setObjectName("mainSplitter");
     m_mainSplitter->setHandleWidth(1);
 
-    // Left: thumbnail grid
+    // Left: grilla de thumbnails, o el estado vacio cuando no hay nada que mostrar
+    m_gridStack = new QStackedWidget(this);
     m_gridWidget = new ThumbnailGridWidget(this);
-    m_mainSplitter->addWidget(m_gridWidget);
+    m_emptyState = new EmptyStateWidget(this);
+    m_gridStack->addWidget(m_gridWidget);   // 0
+    m_gridStack->addWidget(m_emptyState);   // 1
+    m_mainSplitter->addWidget(m_gridStack);
 
     // Right: preview + metadata stacked vertically
     m_rightSplitter = new QSplitter(Qt::Vertical, this);
@@ -261,11 +283,26 @@ void MainWindow::setupUI()
 
     // Status bar
     m_statusLabel = new QLabel(this);
-    m_statusLabel->setStyleSheet("padding: 0 8px; color: #444444; font-size: 11px;");
+    m_statusLabel->setObjectName("statusLabel");
     statusBar()->addPermanentWidget(m_statusLabel, 1);
-    statusBar()->setStyleSheet(
-        "QStatusBar { background:#111111; border-top:1px solid #1e1e1e; }"
-    );
+    statusBar()->setSizeGripEnabled(false);
+}
+
+void MainWindow::setupMenus()
+{
+    // En macOS la barra de menu es la nativa: el About con AboutRole lo mueve Qt al menu de
+    // la app ("About ThetaMacExplorer"), y el Help queda con Cmd+?.
+    QMenu* helpMenu = menuBar()->addMenu("Help");
+
+    auto* helpAction = new QAction("ThetaMacExplorer Help", this);
+    helpAction->setShortcut(QKeySequence::HelpContents);
+    connect(helpAction, &QAction::triggered, this, &MainWindow::onHelpRequested);
+    helpMenu->addAction(helpAction);
+
+    auto* aboutAction = new QAction("About ThetaMacExplorer", this);
+    aboutAction->setMenuRole(QAction::AboutRole);
+    connect(aboutAction, &QAction::triggered, this, &MainWindow::onHelpRequested);
+    helpMenu->addAction(aboutAction);
 }
 
 void MainWindow::setupConnections()
@@ -302,20 +339,33 @@ void MainWindow::setupConnections()
     connect(m_gridWidget, &ThumbnailGridWidget::selectionChanged,
             this, &MainWindow::onSelectionChanged);
 
+    connect(m_folderBtn,   &QPushButton::clicked, this, &MainWindow::onBrowseFolderClicked);
     connect(m_downloadBtn, &QPushButton::clicked, this, &MainWindow::onDownloadClicked);
     connect(m_deleteBtn,   &QPushButton::clicked, this, &MainWindow::onDeleteClicked);
     connect(m_refreshBtn,  &QPushButton::clicked, this, &MainWindow::onRefreshClicked);
+    connect(m_helpBtn,     &QPushButton::clicked, this, &MainWindow::onHelpRequested);
 }
 
-void MainWindow::applyStyles()
+void MainWindow::applyButtonIcons()
 {
-    // Toolbar buttons already have inline styles set in setupUI
-    // Additional styles via QSS loaded in main.cpp
+    const qreal dpr = devicePixelRatioF();
+    m_folderBtn->setIcon(UiIcons::buttonIcon("folder", kToolbarIconSize,
+        QColor(kIconNeutral), QColor(kIconNeutralDisabled), dpr));
+    m_refreshBtn->setIcon(UiIcons::buttonIcon("refresh", kToolbarIconSize,
+        QColor(kIconNeutral), QColor(kIconNeutralDisabled), dpr));
+    m_downloadBtn->setIcon(UiIcons::buttonIcon("download", kToolbarIconSize,
+        QColor(kIconPrimary), QColor(kIconPrimaryDisabled), dpr));
+    m_deleteBtn->setIcon(UiIcons::buttonIcon("trash", kToolbarIconSize,
+        QColor(kIconDanger), QColor(kIconDangerDisabled), dpr));
+    m_helpBtn->setIcon(UiIcons::buttonIcon("help", 16,
+        QColor(ColorUtils::TXT_SECUNDARIO), QColor(kIconNeutralDisabled), dpr));
+    m_helpBtn->setIconSize(QSize(16, 16));
+    m_batteryIcon->setPixmap(UiIcons::pixmap("battery", 18, QColor(ColorUtils::TXT_SECUNDARIO), dpr));
 }
 
 void MainWindow::loadSettings()
 {
-    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    QSettings settings(AppPaths::settingsFile(), QSettings::IniFormat);
 
     const QByteArray geometry = settings.value("window/geometry").toByteArray();
     if (!geometry.isEmpty()) {
@@ -341,7 +391,7 @@ void MainWindow::loadSettings()
 
 void MainWindow::saveSettings() const
 {
-    QSettings settings(QApplication::organizationName(), QApplication::applicationName());
+    QSettings settings(AppPaths::settingsFile(), QSettings::IniFormat);
     settings.setValue("window/geometry", saveGeometry());
     settings.setValue("window/mainSplitter", m_mainSplitter->saveState());
     settings.setValue("window/rightSplitter", m_rightSplitter->saveState());
@@ -350,11 +400,38 @@ void MainWindow::saveSettings() const
 
 void MainWindow::updateFolderLabel()
 {
+    // Recortada por el principio: lo que importa es la carpeta final.
     QString path = m_downloadFolder;
-    if (path.length() > 30) {
-        path = "..." + path.right(27);
+    const QString home = QDir::homePath();
+    if (path.startsWith(home)) {
+        path = "~" + path.mid(home.size());
     }
-    m_folderLabel->setText(path);
+    m_folderLabel->ensurePolished();   // la fuente de 12 px sale del QSS
+    const QFontMetrics fm(m_folderLabel->font());
+    m_folderLabel->setText(fm.elidedText(path, Qt::ElideLeft, kFolderLabelWidth));
+}
+
+void MainWindow::updateGridPage()
+{
+    const bool hasCamera = m_service->isCameraConnected();
+    if (!hasCamera) {
+        m_emptyState->setContent("Connect your RICOH THETA",
+            "Plug the camera in with a USB cable and turn it on. "
+            "Its photos and videos will show up here.", true);
+        m_gridStack->setCurrentIndex(1);
+    } else if (m_catalogLoaded && m_catalogGroups.isEmpty()) {
+        m_emptyState->setContent("The camera is empty",
+            "Photos and videos you take will show up here.", false);
+        m_gridStack->setCurrentIndex(1);
+    } else {
+        m_gridStack->setCurrentIndex(0);
+    }
+}
+
+void MainWindow::onHelpRequested()
+{
+    HelpDialog dlg(m_downloadFolder, this);
+    dlg.exec();
 }
 
 QString MainWindow::groupDownloadFolderName(const MediaAssetGroup& group) const
@@ -437,26 +514,44 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 void MainWindow::onCameraConnected(const QString& name)
 {
-    m_cameraLabel->setText("⬤  " + name);
-    m_cameraLabel->setStyleSheet("color: #4caf7d; font-size: 13px;");
+    m_cameraDot->setMode(StatusDot::Mode::Connected);
+    m_cameraLabel->setText(name);
+    m_cameraLabel->setProperty("state", "connected");
+    m_cameraLabel->style()->unpolish(m_cameraLabel);
+    m_cameraLabel->style()->polish(m_cameraLabel);
+    m_catalogLoaded = false;
+    updateGridPage();
     setStatusMessage("Camera connected. Loading files...", ColorUtils::SUCCESS);
     updateButtonStates();
 }
 
 void MainWindow::onCameraDisconnected()
 {
-    m_cameraLabel->setText("⬤  No camera connected");
-    m_cameraLabel->setStyleSheet("color: #444444; font-size: 13px;");
-    m_batteryLabel->setText("Battery --");
-    m_batteryLabel->setStyleSheet("color: #555555; font-size: 12px;");
+    m_cameraDot->setMode(StatusDot::Mode::Searching);
+    m_cameraLabel->setText("Searching for camera…");
+    m_cameraLabel->setProperty("state", "searching");
+    m_cameraLabel->style()->unpolish(m_cameraLabel);
+    m_cameraLabel->style()->polish(m_cameraLabel);
+    m_batteryBox->hide();
+    m_catalogLoaded = false;
+    if (m_downloadInProgress) {
+        LOGW("ui") << "Camera disconnected during a download:" << m_downloadDone
+                   << "of" << m_downloadTotal << "files done";
+    }
+    m_downloadInProgress = false;
+    m_downloadHasDeterminateProgress = false;
+    m_progressBar->hide();
+    m_progressLabel->hide();
+    m_progressBar->setRange(0, 100);
     m_gridWidget->clearAll();
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
     m_catalogFiles.clear();
     m_catalogGroups.clear();
     m_selectedGroups.clear();
+    updateGridPage();
     updateButtonStates();
-    setStatusMessage("Camera disconnected.", ColorUtils::TEXT_DIM);
+    setStatusMessage("No camera connected.");
 }
 
 void MainWindow::onFileListReady(const QList<CameraFileInfo>& files)
@@ -467,26 +562,31 @@ void MainWindow::onFileListReady(const QList<CameraFileInfo>& files)
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
     m_selectedGroups.clear();
+    m_catalogLoaded = true;
+    updateGridPage();
     updateButtonStates();
 
-    int imgs   = 0, vids = 0, raws = 0;
-    for (const auto& f : files) {
-        if (f.isVideo) vids++;
-        else if (f.isRaw) raws++;
-        else imgs++;
-    }
-    int hdrJpg = 0, hdrRaw = 0;
+    // Resumen por item (lo que se ve en la grilla), no por archivo.
+    int photos = 0, raws = 0, vids = 0, hdrSets = 0;
     for (const auto& g : m_catalogGroups) {
-        if (g.kind == MediaAssetKind::HdrJpegSet) hdrJpg++;
-        if (g.kind == MediaAssetKind::HdrRawSet) hdrRaw++;
+        switch (g.kind) {
+            case MediaAssetKind::SinglePhoto: photos++; break;
+            case MediaAssetKind::SingleRaw:   raws++; break;
+            case MediaAssetKind::Video:       vids++; break;
+            case MediaAssetKind::HdrJpegSet:
+            case MediaAssetKind::HdrRawSet:   hdrSets++; break;
+        }
     }
-    QString summary = QString("%1 browser item%2  (%3 photo%4, %5 video%6, %7 RAW, %8 HDR JPG, %9 HDR DNG)")
-        .arg(m_catalogGroups.size()).arg(m_catalogGroups.size() != 1 ? "s" : "")
-        .arg(imgs).arg(imgs != 1 ? "s" : "")
-        .arg(vids).arg(vids != 1 ? "s" : "")
-        .arg(raws)
-        .arg(hdrJpg)
-        .arg(hdrRaw);
+    QStringList parts;
+    if (hdrSets) parts << QString("%1 HDR set%2").arg(hdrSets).arg(hdrSets != 1 ? "s" : "");
+    if (photos)  parts << QString("%1 photo%2").arg(photos).arg(photos != 1 ? "s" : "");
+    if (raws)    parts << QString("%1 RAW").arg(raws);
+    if (vids)    parts << QString("%1 video%2").arg(vids).arg(vids != 1 ? "s" : "");
+    QString summary = QString("%1 item%2 on camera")
+        .arg(m_catalogGroups.size()).arg(m_catalogGroups.size() != 1 ? "s" : "");
+    if (!parts.isEmpty()) {
+        summary += ": " + parts.join(", ") + QString(" (%1 files)").arg(files.size());
+    }
     setStatusMessage(summary);
 }
 
@@ -513,86 +613,127 @@ void MainWindow::onDownloadClicked()
 {
     if (m_selectedGroups.isEmpty()) return;
 
-    LOGI("ui") << "Download requested. selectedGroups:" << m_selectedGroups.size()
+    // Copia de la seleccion: mientras el cartel esta abierto una desconexion o un catalogo
+    // nuevo vacian m_selectedGroups.
+    const QList<MediaAssetGroup> selection = m_selectedGroups;
+
+    LOGI("ui") << "Download requested. selectedGroups:" << selection.size()
                << "downloadRoot:" << m_downloadFolder;
 
     // Ensure download folder exists
     QDir().mkpath(m_downloadFolder);
 
-    QList<MediaAssetGroup> groupsToReplace;
-    QList<MediaAssetGroup> groupsToSkip;
-    for (MediaAssetGroup group : m_selectedGroups) {
+    QList<MediaAssetGroup> groupsWithLocal;
+    for (MediaAssetGroup group : selection) {
         updateGroupLocalStatus(group);
         if (group.allFilesDownloaded || group.hasPartialLocalContent) {
-            groupsToReplace.append(group);
+            groupsWithLocal.append(group);
         }
     }
 
-    QMessageBox::StandardButton overwriteChoice = QMessageBox::NoButton;
-    if (!groupsToReplace.isEmpty()) {
-        QMessageBox msgBox(this);
-        msgBox.setIcon(QMessageBox::Question);
-        msgBox.setWindowTitle("Existing local files");
-        msgBox.setText(QString("%1 selected item%2 already exist locally, completely or partially.")
-            .arg(groupsToReplace.size())
-            .arg(groupsToReplace.size() != 1 ? "s" : ""));
-        msgBox.setInformativeText("Replace the whole local set/file before downloading again?");
-        QPushButton* replaceBtn = msgBox.addButton("Replace Existing", QMessageBox::AcceptRole);
-        QPushButton* skipBtn = msgBox.addButton("Skip Existing", QMessageBox::DestructiveRole);
-        msgBox.addButton(QMessageBox::Cancel);
-        msgBox.exec();
+    enum class OverwriteChoice { None, Replace, Skip };
+    OverwriteChoice overwriteChoice = OverwriteChoice::None;
+    if (!groupsWithLocal.isEmpty()) {
+        const int existing = groupsWithLocal.size();
+        const int total = selection.size();
+        ConfirmDialog::Spec spec;
+        spec.iconName = "folder_check";
+        spec.title = (total == 1)
+            ? QString("This item already has files in the download folder")
+            : QString("%1 of %2 items already %3 files in the download folder")
+                  .arg(existing).arg(total).arg(existing == 1 ? "has" : "have");
+        spec.subtitle = (existing == 1)
+            ? QString("Skip the files that are already there and download only what's missing, "
+                      "or replace the local copy.")
+            : QString("Skip the files that are already there and download only what's missing, "
+                      "or replace the local copies.");
+        spec.hintHtml = "Press <b>Enter</b> to skip, <b>Esc</b> to cancel.";
+        spec.buttons = {
+            {"Cancel (esc)", ConfirmDialog::ButtonStyle::Neutral},
+            {"Replace", ConfirmDialog::ButtonStyle::Neutral},
+            {"Skip Existing (enter)", ConfirmDialog::ButtonStyle::Action},
+        };
+        spec.defaultIndex = 2;
+        spec.escapeIndex = 0;
+        spec.noFocusIndexes = {1};   // Replace borra la carpeta local: solo con click
 
-        if (msgBox.clickedButton() == replaceBtn) {
-            overwriteChoice = QMessageBox::Yes;
-        } else if (msgBox.clickedButton() == skipBtn) {
-            overwriteChoice = QMessageBox::No;
+        const int choice = ConfirmDialog::ask(this, spec);
+        if (choice == 1) {
+            overwriteChoice = OverwriteChoice::Replace;
+        } else if (choice == 2) {
+            overwriteChoice = OverwriteChoice::Skip;
         } else {
             return;
         }
     }
 
-    QList<CameraFileInfo> filesToDownload = selectedFilesFlattened();
-    if (overwriteChoice == QMessageBox::No) {
-        filesToDownload.clear();
-        for (MediaAssetGroup group : m_selectedGroups) {
-            updateGroupLocalStatus(group);
-            if (!group.allFilesDownloaded && !group.hasPartialLocalContent) {
-                filesToDownload.append(group.files);
+    // La camara pudo desconectarse con el cartel abierto: no tocar nada local.
+    if (!m_service->isCameraConnected()) {
+        setStatusMessage("The camera was disconnected. Nothing was downloaded.", ColorUtils::WARNING);
+        return;
+    }
+
+    // Que se encola por grupo. Con "Skip Existing" se saltean los ARCHIVOS que ya estan en
+    // disco con el mismo tamano; un set a medio bajar se completa. (Antes de v0.994 se
+    // calculaba la lista pero se encolaban todos los grupos igual.)
+    QList<QPair<MediaAssetGroup, QList<CameraFileInfo>>> queue;
+    int filesToDownload = 0;
+    for (const MediaAssetGroup& group : selection) {
+        QList<CameraFileInfo> files = group.files;
+        if (overwriteChoice == OverwriteChoice::Skip) {
+            files.clear();
+            const QString folder = groupDownloadFolderPath(group);
+            for (const CameraFileInfo& file : group.files) {
+                const QString local = findMatchingLocalFilePath(folder, file.name);
+                const bool complete = !local.isEmpty()
+                    && (file.sizeBytes <= 0 || QFileInfo(local).size() == file.sizeBytes);
+                if (!complete) {
+                    files.append(file);
+                }
             }
         }
-        if (filesToDownload.isEmpty()) {
-            setStatusMessage("Nothing to download. All selected items already exist locally.", ColorUtils::TEXT_DIM);
-            return;
+        if (!files.isEmpty()) {
+            filesToDownload += files.size();
+            queue.append({group, files});
         }
-    } else if (overwriteChoice == QMessageBox::Yes) {
-        for (const MediaAssetGroup& group : groupsToReplace) {
+    }
+
+    if (filesToDownload == 0) {
+        setStatusMessage("Nothing to download. All selected files are already in the download folder.");
+        return;
+    }
+
+    if (overwriteChoice == OverwriteChoice::Replace) {
+        for (const MediaAssetGroup& group : groupsWithLocal) {
             LOGI("ui") << "Replacing local folder before redownload:"
                        << groupDownloadFolderPath(group);
             QDir(groupDownloadFolderPath(group)).removeRecursively();
         }
     }
 
-    m_downloadTotal = filesToDownload.size();
+    m_downloadTotal = filesToDownload;
     m_downloadDone  = 0;
+    m_downloadErrors = 0;
+    m_lastDownloadError.clear();
     m_downloadHasDeterminateProgress = false;
     m_downloadInProgress = true;
 
     m_progressBar->setRange(0, 0);
-    m_progressLabel->setText(QString("Downloading %1 item%2...")
+    m_progressLabel->setText(QString("Downloading %1 file%2...")
         .arg(m_downloadTotal)
         .arg(m_downloadTotal != 1 ? "s" : ""));
     m_progressBar->show();
     m_progressLabel->show();
     updateButtonStates();
 
-    for (const MediaAssetGroup& group : m_selectedGroups) {
-        const QString targetFolder = groupDownloadFolderPath(group);
+    for (const auto& entry : queue) {
+        const QString targetFolder = groupDownloadFolderPath(entry.first);
         QDir().mkpath(targetFolder);
         LOGI("ui") << "Queueing group download:"
-                   << group.displayTitle
-                   << "files:" << group.files.size()
+                   << entry.first.displayTitle
+                   << "files:" << entry.second.size()
                    << "targetFolder:" << targetFolder;
-        m_service->downloadFiles(group.files, targetFolder);
+        m_service->downloadFiles(entry.second, targetFolder);
     }
     setStatusMessage(QString("Downloading %1 file%2 to %3...")
         .arg(m_downloadTotal)
@@ -604,7 +745,44 @@ void MainWindow::onDeleteClicked()
 {
     if (m_selectedGroups.isEmpty()) return;
     QList<CameraFileInfo> filesToDelete = selectedFilesFlattened();
-    if (!ConfirmDeleteDialog::confirm(filesToDelete.size(), this)) return;
+
+    // Un set HDR son varios archivos: el cartel dice el total real que se borra.
+    const int items = m_selectedGroups.size();
+    const int files = filesToDelete.size();
+    int hdrSets = 0;
+    int hdrImages = 0;
+    for (const MediaAssetGroup& group : m_selectedGroups) {
+        if (group.isHdrSet) {
+            ++hdrSets;
+            hdrImages = group.imageCount();
+        }
+    }
+    QString detail;
+    if (files != items) {
+        detail = QString("That's %1 files").arg(files);
+        if (hdrSets == 1) {
+            detail += QString(", including a %1-image HDR set").arg(hdrImages);
+        } else if (hdrSets > 1) {
+            detail += QString(", including %1 HDR sets").arg(hdrSets);
+        }
+        detail += ". ";
+    }
+
+    ConfirmDialog::Spec spec;
+    spec.iconName = "trash";
+    spec.title = (items == 1) ? QString("Delete this item from the camera?")
+                              : QString("Delete %1 items from the camera?").arg(items);
+    spec.subtitle = detail + "This can't be undone.";
+    spec.hintHtml = "Press <b>Enter</b> or <b>Esc</b> to cancel. Deleting takes a click.";
+    spec.buttons = {
+        {"Cancel (esc)", ConfirmDialog::ButtonStyle::Neutral},
+        {"Delete", ConfirmDialog::ButtonStyle::Danger},
+    };
+    // Enter cancela: borrar de la camara no tiene vuelta atras.
+    spec.defaultIndex = 0;
+    spec.escapeIndex = 0;
+    spec.noFocusIndexes = {1};   // con Tab + Espacio se borraria sin ver el foco
+    if (ConfirmDialog::ask(this, spec) != 1) return;
 
     QStringList names;
     for (const CameraFileInfo& file : filesToDelete) {
@@ -652,7 +830,7 @@ void MainWindow::onRefreshClicked()
     }
 
     LOGI("ui") << "Manual camera refresh requested";
-    setStatusMessage("Refreshing camera catalog...", ColorUtils::TEXT_DIM);
+    setStatusMessage("Refreshing camera catalog...");
     m_service->refresh();
 }
 
@@ -682,85 +860,103 @@ void MainWindow::onDownloadFileCompleted(const QString& fileName, const QString&
     m_progressLabel->setText(
         QString("%1 / %2 done  %3").arg(m_downloadDone).arg(m_downloadTotal).arg(fileName)
     );
-
-    if (m_downloadDone >= m_downloadTotal) {
-        m_downloadInProgress = false;
-        m_progressBar->hide();
-        m_progressLabel->hide();
-        m_progressBar->setRange(0, 100);
-        m_downloadHasDeterminateProgress = false;
-        refreshDownloadedStatus();
-        updateButtonStates();
-        setStatusMessage(
-            QString("Downloaded %1 file%2 to %3")
-                .arg(m_downloadDone)
-                .arg(m_downloadDone != 1 ? "s" : "")
-                .arg(m_downloadFolder),
-            ColorUtils::SUCCESS
-        );
-    }
     LOGD("ui") << "Downloaded:" << fileName << "->" << path;
+
+    if (m_downloadInProgress && m_downloadDone == m_downloadTotal) {
+        finishDownloadBatch();
+    }
 }
 
 void MainWindow::onDownloadError(const QString& fileName, const QString& error)
 {
     m_downloadDone++;
+    m_downloadErrors++;
+    m_lastDownloadError = fileName + ": " + error;
     LOGW("ui") << "Download error surfaced to UI:"
                << fileName
                << "completed:" << m_downloadDone
                << "of" << m_downloadTotal
                << "message:" << error;
     setStatusMessage("Download error: " + fileName + " - " + error, ColorUtils::ERROR_COLOR);
-    if (m_downloadDone >= m_downloadTotal) {
-        m_downloadInProgress = false;
-        m_progressBar->hide();
-        m_progressLabel->hide();
-        m_progressBar->setRange(0, 100);
-        m_downloadHasDeterminateProgress = false;
-        refreshDownloadedStatus();
-        updateButtonStates();
+    if (m_downloadInProgress && m_downloadDone == m_downloadTotal) {
+        finishDownloadBatch();
+    }
+}
+
+void MainWindow::finishDownloadBatch()
+{
+    m_downloadInProgress = false;
+    m_progressBar->hide();
+    m_progressLabel->hide();
+    m_progressBar->setRange(0, 100);
+    m_downloadHasDeterminateProgress = false;
+    refreshDownloadedStatus();
+    updateButtonStates();
+
+    // Un solo aviso por lote, no uno por archivo.
+    const int ok = m_downloadDone - m_downloadErrors;
+    if (m_downloadErrors == 0) {
+        const QString msg = QString("Downloaded %1 file%2 to %3")
+            .arg(ok).arg(ok != 1 ? "s" : "").arg(m_downloadFolder);
+        setStatusMessage(msg, ColorUtils::SUCCESS);
+        notifySuccess(QString("Downloaded %1 file%2.").arg(ok).arg(ok != 1 ? "s" : ""));
+    } else {
+        notifyError(QString("<b>%1 of %2 files couldn't be downloaded.</b><br>%3")
+            .arg(m_downloadErrors).arg(m_downloadTotal)
+            .arg(m_lastDownloadError.toHtmlEscaped()));
     }
 }
 
 void MainWindow::onDeleteCompleted(const QStringList& deletedPaths)
 {
-    m_gridWidget->removeFiles(deletedPaths);
+    // Se saca lo borrado del catalogo y se reconstruyen los grupos: no se depende de que la
+    // camara vuelva a enumerar (no siempre lo hace).
+    QList<CameraFileInfo> remaining;
+    for (const CameraFileInfo& file : m_catalogFiles) {
+        if (!deletedPaths.contains(file.devicePath)) {
+            remaining.append(file);
+        }
+    }
+    m_catalogFiles = remaining;
+    m_catalogGroups = HdrGroupingService::buildGroups(m_catalogFiles);
+    refreshDownloadedStatus();
     m_previewPanel->clearPreview();
     m_metaPanel->clearMetadata();
     m_selectedGroups.clear();
+    updateGridPage();
     updateButtonStates();
-    setStatusMessage(
-        QString("Deleted %1 file%2 from camera.")
-            .arg(deletedPaths.size())
-            .arg(deletedPaths.size() != 1 ? "s" : ""),
-        ColorUtils::SUCCESS
-    );
+    const QString msg = QString("Deleted %1 file%2 from the camera.")
+        .arg(deletedPaths.size())
+        .arg(deletedPaths.size() != 1 ? "s" : "");
+    setStatusMessage(msg, ColorUtils::SUCCESS);
+    notifySuccess(msg);
 }
 
 void MainWindow::onErrorOccurred(const QString& message)
 {
     LOGW("ui") << "Error:" << message;
     setStatusMessage(message, ColorUtils::ERROR_COLOR);
-    m_downloadInProgress = false;
+    notifyError(message.toHtmlEscaped());
+    // Los errores de descarga llegan por onDownloadError; estos (camara, borrar) no cortan
+    // un lote en curso: si la camara se va, onCameraDisconnected resetea el estado.
     updateButtonStates();
-    m_progressBar->hide();
-    m_progressLabel->hide();
 }
 
 void MainWindow::onBatteryLevelChanged(int percent, bool available)
 {
     if (!available || percent < 0) {
+        m_batteryBox->hide();
         return;
     }
 
-    QString color = "#4caf7d";
-    if (percent <= 20) color = "#d96c6c";
-    else if (percent <= 50) color = "#c8a24d";
-
-    m_batteryLabel->setText(QString("Battery %1%").arg(percent));
-    m_batteryLabel->setStyleSheet(
-        QString("color: %1; font-size: 12px;").arg(color)
-    );
+    const bool low = percent <= kLowBatteryPercent;
+    const QColor color(low ? ColorUtils::ERROR_COLOR : ColorUtils::TXT_SECUNDARIO);
+    m_batteryIcon->setPixmap(UiIcons::pixmap("battery", 18, color, devicePixelRatioF()));
+    m_batteryLabel->setText(QString("%1%").arg(percent));
+    m_batteryLabel->setProperty("low", low);
+    m_batteryLabel->style()->unpolish(m_batteryLabel);
+    m_batteryLabel->style()->polish(m_batteryLabel);
+    m_batteryBox->setVisible(m_service->isCameraConnected());
 }
 
 void MainWindow::updateButtonStates()
@@ -772,13 +968,31 @@ void MainWindow::updateButtonStates()
     m_deleteBtn->setEnabled(hasCamera && hasSelected && !busy);
     m_folderBtn->setEnabled(!busy);
     m_refreshBtn->setEnabled(hasCamera && !busy);
+    m_downloadBtn->setText(hasSelected ? QString("Download %1").arg(m_selectedGroups.size())
+                                       : QString("Download"));
 }
 
 void MainWindow::setStatusMessage(const QString& msg, const QString& color)
 {
-    QString c = color.isEmpty() ? ColorUtils::TEXT_DIM : color;
-    m_statusLabel->setStyleSheet(
-        QString("padding: 0 8px; color: %1; font-size: 11px;").arg(c)
-    );
+    const QString c = color.isEmpty() ? QString(ColorUtils::TXT_SECUNDARIO) : color;
+    m_statusLabel->setStyleSheet(QString("QLabel#statusLabel { color: %1; }").arg(c));
     m_statusLabel->setText(msg);
+}
+
+void MainWindow::notifyError(const QString& html)
+{
+    // Un error nuevo reemplaza al que este abierto, para no apilar avisos.
+    if (m_errorPopover) {
+        m_errorPopover->closePopover();
+    }
+    m_errorPopover = new MessagePopover(this);
+    m_errorPopover->setMessage(html);
+    m_errorPopover->showPopover();   // los errores no se cierran solos
+}
+
+void MainWindow::notifySuccess(const QString& msg)
+{
+    auto* popover = new MessagePopover(this);
+    popover->setMessage(msg.toHtmlEscaped());
+    popover->showPopover(4000);
 }

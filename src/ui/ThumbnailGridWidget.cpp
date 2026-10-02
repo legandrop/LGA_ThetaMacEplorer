@@ -17,7 +17,7 @@ ThumbnailGridWidget::ThumbnailGridWidget(QWidget* parent)
 
     m_container = new QWidget(this);
     m_container->setObjectName("gridContainer");
-    m_container->setStyleSheet("background: #161616;");
+    m_container->setAttribute(Qt::WA_StyledBackground);
 
     m_layout = new QGridLayout(m_container);
     m_layout->setContentsMargins(12, 12, 12, 12);

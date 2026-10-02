@@ -153,6 +153,10 @@ if [ "$NO_DEPLOY" = "false" ]; then
         NEEDS_DEPLOY=true
     elif [ ! -f "$APP_BUNDLE/Contents/PlugIns/imageformats/libqjpeg.dylib" ]; then
         NEEDS_DEPLOY=true
+    elif [ ! -d "$APP_BUNDLE/Contents/Frameworks/QtSvg.framework" ]; then
+        # Los iconos de la UI se rasterizan con QtSvg: un bundle armado antes de sumarlo
+        # no lo trae y la app no arranca.
+        NEEDS_DEPLOY=true
     fi
 
     if [ "$NEEDS_DEPLOY" = "true" ]; then
@@ -202,7 +206,7 @@ echo "Launching $APP_NAME..."
 # retiene la terminal hasta que alguien cierra la app a mano, lo que en la practica cuelga
 # al que compila por tiempo indefinido. El stdout/stderr de la app
 # se descarta: el log completo ya va al archivo de Logger (por defecto
-# /tmp/ThetaMacExplorer.log, override con la variable de entorno THETA_LOG_FILE).
+# ~/Library/Logs/LGA/ThetaMacExplorer/debug.log, override con la variable de entorno THETA_LOG_FILE).
 #
 # Con --wait se mantiene el comportamiento viejo, que es el que sirve para ver un crash al
 # arranque, el exit code o los prints que todavia no pasan por el log.
@@ -211,6 +215,6 @@ if [ "$WAIT_FOR_APP" = "true" ]; then
 else
     "$APP_BIN" >/dev/null 2>&1 &
     disown
-    echo "   PID $! (background). Log: ${THETA_LOG_FILE:-/tmp/ThetaMacExplorer.log}"
+    echo "   PID $! (background). Log: ${THETA_LOG_FILE:-$HOME/Library/Logs/LGA/ThetaMacExplorer/debug.log}"
     echo "   Usá --wait si necesitás ver su salida o su exit code en la terminal."
 fi
