@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ThetaMacExplorer VERSION 0.995 LANGUAGES CXX OBJCXX)
+project(ThetaMacExplorer VERSION 0.996 LANGUAGES CXX OBJCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -32,7 +32,10 @@ if(APPLE)
     set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
 endif()
 
-set(CMAKE_BUILD_TYPE Debug)
+# Debug por defecto; deploy.sh compila Release en build-release/ (compilar_dev.sh --release).
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
 if(APPLE)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
     set(CMAKE_OBJCXX_FLAGS_DEBUG "${CMAKE_OBJCXX_FLAGS_DEBUG} -g -O0")
@@ -185,7 +188,9 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_NAME "ThetaMacExplorer"
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
-        MACOSX_BUNDLE_IDENTIFIER "com.lga.thetamacexplorer"
+        # GUI_IDENTIFIER es el nombre que CMake conoce: con MACOSX_BUNDLE_IDENTIFIER el
+        # CFBundleIdentifier del bundle salia vacio.
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.lga.thetamacexplorer"
         MACOSX_BUNDLE_EXECUTABLE_NAME "ThetaMacExplorer"
         MACOSX_BUNDLE_ICON_FILE "AppIcon.icns"
     )

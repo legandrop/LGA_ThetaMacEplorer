@@ -50,3 +50,4 @@ CMakeLists.txt text eol=lf
 *.dylib binary
 *.so   binary
 *.a    binary
+*.tiff binary

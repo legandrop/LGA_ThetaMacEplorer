@@ -74,8 +74,9 @@ Donde `AAMMDD` es la fecha de captura del representativo (año 2 digitos, mes, d
 
 Ejemplos:
 
-- `HDRI_260402_R0021381-1389_jpg`
-- `HDRI_260402_R0021381-1389_dng`
+- `HDRI_260402_R21381-21389_jpg` (set HDR: el rango pierde los ceros de adelante)
+- `HDRI_260402_R21381-21389_dng`
+- `HDRI_260402_R0021390.JPG_jpg` (foto suelta: el nombre completo)
 - `video_260401_R0010661.MP4_`
 
 ## Fechas en tiles

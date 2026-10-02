@@ -1,5 +1,15 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.996:
+- Deploy: `deploy.sh` nuevo, de un solo paso. Pregunta al principio si armar el ZIP, el DMG y si publicar, y despues compila Release universal en `build-release/` (`compilar_dev.sh --release`, arbol separado que no toca la cache de desarrollo), copia el bundle a `deploy/`, valida que todo sea universal, firma (identidad estable `LGA Code Signing` si esta, si no ad-hoc), arma y verifica el ZIP (symlinks y firma) y el DMG, y si se confirma crea el tag `v<version>` y el release en este mismo repo, que es publico. Antes de compilar chequea lo que haria fallar la publicacion (gh, cuenta de git, working tree limpio, `main` igual a `origin/main`), y la publicacion pide una confirmacion final que por defecto es no. Esquema de LGA_FrameRev y LGA_Calmate.
+- `create_dmg.sh` copiado de LGA_Calmate, con `dmgbuild` vendorizado (Python puro, no instala nada), fondo oscuro versionado en `resources/dmg/` y un `Read Me.txt` en ingles con el `sudo xattr -cr` para abrir la app sin notarizar.
+- `CMakeLists.txt` deja de forzar `CMAKE_BUILD_TYPE Debug`: Debug sigue siendo el default, pero ahora se puede compilar Release.
+- README nuevo en ingles (`README.md`) y en castellano (`README_ES.md`): el repo es publico y no tenia ninguno. Documentacion del deploy en `doc/deploy.md`.
+- **Bug: el bundle salia sin `CFBundleIdentifier`.** `CMakeLists.txt` usaba `MACOSX_BUNDLE_IDENTIFIER`, una propiedad que CMake no conoce, asi que el `Info.plist` quedaba con el identificador vacio y la firma usaba `ThetaMacExplorer`. Pasa a `MACOSX_BUNDLE_GUI_IDENTIFIER` (`com.lga.thetamacexplorer`). Como cambia la identidad de la app, macOS puede volver a pedir el permiso de la camara una vez.
+- `dmgbuild`, `ds_store` y `mac_alias` vendorizados llevan su `LICENSE` (MIT exige el aviso en cada copia), y `refresh_dmg_vendor.sh` lo copia del dist-info al regenerar.
+- `doc/session-and-download-behavior.md` tenia mal el ejemplo de carpeta de un set HDR: el rango pierde los ceros (`R21381-21389`).
+- [ Deploy - deploy.sh con DMG y release en GitHub + README ]
+
 v0.995:
 - Build macOS: la app pasa a binario **universal** (`arm64;x86_64`) y corre nativa en Apple Silicon. `compilar_dev.sh` y `compilar.sh` se relanzaban enteros bajo Rosetta y compilaban solo `x86_64`, asi que en una Mac M la app corria emulada y macOS avisaba que una app Intel deja de funcionar en una version futura. Qt 6.5.3 ya traia sus frameworks y plugins universales; el unico binario Intel era el de la app. Mismo criterio que `LGA_Base_QT_C_Py`: `CMakeLists.txt` pide `arm64;x86_64` en un host arm64, los scripts pasan la misma lista, y `compilar_dev.sh` reconfigura solo (sin borrar `build/`) si el cache tenia otras arquitecturas. Se copia del Base `tools/macos/validate_universal_macho.sh`, que corre al final del build y avisa si algun binario del bundle no es universal (hoy: 30 de 30). `compilar_dev.sh` suma `--force-rosetta` para lanzar la mitad Intel cuando haga falta probarla.
 - [ Build - Binario universal, corre nativo en Apple Silicon ]

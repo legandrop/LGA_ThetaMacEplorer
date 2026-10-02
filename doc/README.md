@@ -21,6 +21,9 @@ Este directorio centraliza la documentacion funcional y tecnica del proyecto.
 - `hdr-grouping-observed-patterns.md`
   Resume el patron real observado en el catalogo exportado de la Z1 y la regla de agrupacion implementada a partir de esa evidencia.
 
+- `deploy.md`
+  Como `deploy.sh` compila Release, firma, arma el ZIP y el DMG y publica el release en GitHub, y que necesita el sitio para mostrar Descargar.
+
 - `ui.md`
   Paleta y QSS con variables, fuente Inter embebida, iconos SVG, toolbar, estados vacios, carteles de confirmacion, avisos flotantes y Help.
 

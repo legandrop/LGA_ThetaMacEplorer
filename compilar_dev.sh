@@ -15,13 +15,14 @@ fi
 APP_NAME="ThetaMacExplorer"
 QT_PATH="$HOME/Qt/6.5.3/macos"
 BUILD_DIR="build"
-APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
-APP_BIN="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+BUILD_TYPE="Debug"
 
 show_help() {
-    echo "Uso: $0 [--force-clean] [--parallel N] [--no-deploy] [--no-run] [--wait] [--force-rosetta]"
+    echo "Uso: $0 [--release] [--force-clean] [--parallel N] [--no-deploy] [--no-run] [--wait] [--force-rosetta]"
     echo ""
     echo "Opciones:"
+    echo "  --release        Compila Release en build-release/ (lo usa deploy.sh). No toca"
+    echo "                   build/ ni cierra la app de desarrollo."
     echo "  --force-clean    Borra build y reconfigura desde cero"
     echo "  --parallel N     Usa N núcleos para compilar"
     echo "  --no-deploy      Salta macdeployqt y copias de plugins"
@@ -42,6 +43,7 @@ NO_RUN=false
 # Con --wait se recupera el comportamiento viejo, util para ver un crash o un exit code.
 WAIT_FOR_APP=false
 FORCE_ROSETTA=false
+RELEASE=false
 PARALLEL_CORES=$(sysctl -n hw.logicalcpu)
 
 while [[ $# -gt 0 ]]; do
@@ -70,6 +72,10 @@ while [[ $# -gt 0 ]]; do
             FORCE_ROSETTA=true
             shift
             ;;
+        --release)
+            RELEASE=true
+            shift
+            ;;
         --help)
             show_help
             exit 0
@@ -82,7 +88,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "=== Fast dev build for $APP_NAME ($PARALLEL_CORES cores) ==="
+# Release va en un arbol SEPARADO: deployar no invalida la cache incremental de desarrollo.
+if [ "$RELEASE" = "true" ]; then
+    BUILD_DIR="build-release"
+    BUILD_TYPE="Release"
+fi
+APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
+APP_BIN="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+
+echo "=== $BUILD_TYPE build for $APP_NAME ($PARALLEL_CORES cores) ==="
 
 if [ "$FORCE_CLEAN" = "true" ]; then
     echo "Cleaning build directory..."
@@ -95,8 +109,11 @@ fi
 # extensiones/helpers de VSCode— y hace que VSCode las relance varias
 # veces al arrancar el script). Apuntar al path completo del ejecutable
 # dentro del .app.
-pkill -f "${APP_NAME}.app/Contents/MacOS/${APP_NAME}" 2>/dev/null || true
-sleep 0.3
+# En --release no hace falta: compila en build-release/ y no pisa el binario que corre.
+if [ "$RELEASE" = "false" ]; then
+    pkill -f "${APP_NAME}.app/Contents/MacOS/${APP_NAME}" 2>/dev/null || true
+    sleep 0.3
+fi
 
 # Guard contra cache viejo de SDK: si el CMakeCache apunta a un CMAKE_OSX_SYSROOT
 # (MacOSXNN.sdk) que ya no existe (tipico tras un update de Xcode que cambia la version
@@ -120,7 +137,7 @@ CMAKE_FLAGS=(
     -DCMAKE_PREFIX_PATH="$QT_PATH"
     -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
     -DCMAKE_OSX_ARCHITECTURES="$BUILD_ARCHS"
-    -DCMAKE_BUILD_TYPE=Debug
+    -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
     -DQt6_DIR="$QT_PATH/lib/cmake/Qt6"
     -DCMAKE_CXX_FLAGS_DEBUG="-g -O0 -Wno-unused-parameter"
 )
@@ -138,6 +155,11 @@ else
     fi
     # Un build configurado con otras arquitecturas (p. ej. el x86_64 de antes) se reconfigura;
     # no hace falta borrar build/, CMake recompila todo solo.
+    CACHED_TYPE=$(awk -F= '/^CMAKE_BUILD_TYPE:/{print $2}' CMakeCache.txt 2>/dev/null || true)
+    if [ "$CACHED_TYPE" != "$BUILD_TYPE" ]; then
+        echo "Build type changed ($CACHED_TYPE -> $BUILD_TYPE), reconfiguring..."
+        NEEDS_RECONFIGURE=true
+    fi
     CACHED_ARCHS=$(awk -F= '/^CMAKE_OSX_ARCHITECTURES:/{print $2}' CMakeCache.txt 2>/dev/null || true)
     if [ "$CACHED_ARCHS" != "$BUILD_ARCHS" ]; then
         echo "Architectures changed ($CACHED_ARCHS -> $BUILD_ARCHS), reconfiguring..."
