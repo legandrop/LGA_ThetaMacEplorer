@@ -1,5 +1,9 @@
 # ChangeLog — LGA ThetaMacExplorer
 
+v0.995:
+- Build macOS: la app pasa a binario **universal** (`arm64;x86_64`) y corre nativa en Apple Silicon. `compilar_dev.sh` y `compilar.sh` se relanzaban enteros bajo Rosetta y compilaban solo `x86_64`, asi que en una Mac M la app corria emulada y macOS avisaba que una app Intel deja de funcionar en una version futura. Qt 6.5.3 ya traia sus frameworks y plugins universales; el unico binario Intel era el de la app. Mismo criterio que `LGA_Base_QT_C_Py`: `CMakeLists.txt` pide `arm64;x86_64` en un host arm64, los scripts pasan la misma lista, y `compilar_dev.sh` reconfigura solo (sin borrar `build/`) si el cache tenia otras arquitecturas. Se copia del Base `tools/macos/validate_universal_macho.sh`, que corre al final del build y avisa si algun binario del bundle no es universal (hoy: 30 de 30). `compilar_dev.sh` suma `--force-rosetta` para lanzar la mitad Intel cuando haga falta probarla.
+- [ Build - Binario universal, corre nativo en Apple Silicon ]
+
 v0.994:
 - UI: la app se alinea con el resto de las apps LGA (detalle en `doc/ui.md`).
   - **Help nuevo**: dialogo con nombre y version, «Developed by Lega Pugliese», link a lega.com.ar, atajos y rutas clicables de descargas, logs y settings. Se abre con el boton «?» de la toolbar, con Cmd+? y con «About ThetaMacExplorer» del menu de la app.

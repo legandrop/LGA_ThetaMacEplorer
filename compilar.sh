@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # ThetaMacExplorer build script
-# Workaround for Qt 6.5.x on macOS / Apple Silicon: force Rosetta
-if [ "$(uname -m)" = "arm64" ]; then
-    echo "ARM64 detected. Restarting under Rosetta (x86_64) for Qt compatibility..."
-    exec arch -x86_64 "$0" "$@"
+# Binario universal (arm64 + x86_64): en Apple Silicon corre nativo, sin Rosetta.
+# hw.optional.arm64 dice el hardware real: `uname -m` da x86_64 si la terminal corre bajo Rosetta.
+if [ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ]; then
+    BUILD_ARCHS="arm64;x86_64"
+else
+    BUILD_ARCHS="x86_64"
 fi
 
 APP_NAME="ThetaMacExplorer"
@@ -33,7 +35,7 @@ cmake .. \
     -G "Unix Makefiles" \
     -DCMAKE_PREFIX_PATH="$QT_PATH" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
-    -DCMAKE_OSX_ARCHITECTURES="x86_64"
+    -DCMAKE_OSX_ARCHITECTURES="$BUILD_ARCHS"
 
 if [ $? -ne 0 ]; then
     echo "ERROR: CMake configuration failed."
@@ -76,6 +78,11 @@ if [ ! -d "build/$APP_NAME.app/Contents/Frameworks" ] || [ ! -f "build/$APP_NAME
         [ -f "$QT_PATH/plugins/imageformats/$fmt" ] && \
             cp "$QT_PATH/plugins/imageformats/$fmt" "build/$APP_NAME.app/Contents/PlugIns/imageformats/" || true
     done
+fi
+
+if [ "$BUILD_ARCHS" = "arm64;x86_64" ]; then
+    bash "./tools/macos/validate_universal_macho.sh" "build/$APP_NAME.app" || \
+        echo "WARNING: el bundle tiene binarios que no son universales (ver arriba)."
 fi
 
 echo ""

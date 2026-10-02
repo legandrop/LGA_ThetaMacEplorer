@@ -2,9 +2,14 @@
 
 set -u
 
-if [ "$(uname -m)" = "arm64" ]; then
-    echo "ARM64 detected. Restarting under Rosetta (x86_64) for Qt compatibility..."
-    exec arch -x86_64 "$0" "$@"
+# Binario universal (arm64 + x86_64): en Apple Silicon corre nativo. Antes el script se
+# relanzaba entero bajo Rosetta y compilaba solo x86_64, y macOS avisaba que la app Intel
+# deja de funcionar en una version futura. Qt 6.5.3 ya trae sus frameworks universales.
+# hw.optional.arm64 dice el hardware real: `uname -m` da x86_64 si la terminal corre bajo Rosetta.
+if [ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ]; then
+    BUILD_ARCHS="arm64;x86_64"
+else
+    BUILD_ARCHS="x86_64"
 fi
 
 APP_NAME="ThetaMacExplorer"
@@ -14,7 +19,7 @@ APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 APP_BIN="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
 show_help() {
-    echo "Uso: $0 [--force-clean] [--parallel N] [--no-deploy] [--no-run] [--wait]"
+    echo "Uso: $0 [--force-clean] [--parallel N] [--no-deploy] [--no-run] [--wait] [--force-rosetta]"
     echo ""
     echo "Opciones:"
     echo "  --force-clean    Borra build y reconfigura desde cero"
@@ -24,6 +29,8 @@ show_help() {
     echo "  --wait           Dejar la app en foreground: la terminal queda retenida hasta"
     echo "                   cerrarla y se ven su stdout/stderr y su exit code."
     echo "                   Por defecto la app se lanza en background y el script termina."
+    echo "  --force-rosetta  Lanzar la app bajo Rosetta (x86_64) en Apple Silicon, para probar"
+    echo "                   la mitad Intel del binario universal."
 }
 
 FORCE_CLEAN=false
@@ -34,6 +41,7 @@ NO_RUN=false
 # practica cuelga al que compila por tiempo indefinido.
 # Con --wait se recupera el comportamiento viejo, util para ver un crash o un exit code.
 WAIT_FOR_APP=false
+FORCE_ROSETTA=false
 PARALLEL_CORES=$(sysctl -n hw.logicalcpu)
 
 while [[ $# -gt 0 ]]; do
@@ -56,6 +64,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --wait)
             WAIT_FOR_APP=true
+            shift
+            ;;
+        --force-rosetta)
+            FORCE_ROSETTA=true
             shift
             ;;
         --help)
@@ -107,7 +119,7 @@ CMAKE_FLAGS=(
     -G "Unix Makefiles"
     -DCMAKE_PREFIX_PATH="$QT_PATH"
     -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
-    -DCMAKE_OSX_ARCHITECTURES="x86_64"
+    -DCMAKE_OSX_ARCHITECTURES="$BUILD_ARCHS"
     -DCMAKE_BUILD_TYPE=Debug
     -DQt6_DIR="$QT_PATH/lib/cmake/Qt6"
     -DCMAKE_CXX_FLAGS_DEBUG="-g -O0 -Wno-unused-parameter"
@@ -122,6 +134,13 @@ else
     CACHED_FLAGS=$(awk -F= '/^CMAKE_EXE_LINKER_FLAGS:STRING=/{print $2}' CMakeCache.txt 2>/dev/null || true)
     if [[ "$CACHED_FLAGS" == *"-F "* ]]; then
         echo "Cleaning stale -F flag from previous AGL dummy, reconfiguring..."
+        NEEDS_RECONFIGURE=true
+    fi
+    # Un build configurado con otras arquitecturas (p. ej. el x86_64 de antes) se reconfigura;
+    # no hace falta borrar build/, CMake recompila todo solo.
+    CACHED_ARCHS=$(awk -F= '/^CMAKE_OSX_ARCHITECTURES:/{print $2}' CMakeCache.txt 2>/dev/null || true)
+    if [ "$CACHED_ARCHS" != "$BUILD_ARCHS" ]; then
+        echo "Architectures changed ($CACHED_ARCHS -> $BUILD_ARCHS), reconfiguring..."
         NEEDS_RECONFIGURE=true
     fi
 fi
@@ -180,6 +199,13 @@ else
     echo "Skipping deploy (--no-deploy)"
 fi
 
+# El bundle tiene que quedar entero universal: un framework o plugin de una sola
+# arquitectura hace que la app no arranque en la otra.
+if [ "$NO_DEPLOY" = "false" ] && [ "$BUILD_ARCHS" = "arm64;x86_64" ]; then
+    bash "./tools/macos/validate_universal_macho.sh" "$APP_BUNDLE" || \
+        echo "WARNING: el bundle tiene binarios que no son universales (ver arriba)."
+fi
+
 echo "Build complete."
 
 # Refrescar el cache de iconos del bundle: tras cambiar el .icns, el Dock/Finder pueden
@@ -210,10 +236,16 @@ echo "Launching $APP_NAME..."
 #
 # Con --wait se mantiene el comportamiento viejo, que es el que sirve para ver un crash al
 # arranque, el exit code o los prints que todavia no pasan por el log.
+LAUNCH=("$APP_BIN")
+if [ "$FORCE_ROSETTA" = "true" ] && [ "$BUILD_ARCHS" = "arm64;x86_64" ]; then
+    echo "   (bajo Rosetta, x86_64)"
+    LAUNCH=(arch -x86_64 "$APP_BIN")
+fi
+
 if [ "$WAIT_FOR_APP" = "true" ]; then
-    exec "$APP_BIN"
+    exec "${LAUNCH[@]}"
 else
-    "$APP_BIN" >/dev/null 2>&1 &
+    "${LAUNCH[@]}" >/dev/null 2>&1 &
     disown
     echo "   PID $! (background). Log: ${THETA_LOG_FILE:-$HOME/Library/Logs/LGA/ThetaMacExplorer/debug.log}"
     echo "   Usá --wait si necesitás ver su salida o su exit code en la terminal."

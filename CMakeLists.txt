@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ThetaMacExplorer VERSION 0.994 LANGUAGES CXX OBJCXX)
+project(ThetaMacExplorer VERSION 0.995 LANGUAGES CXX OBJCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -18,8 +18,10 @@ if(APPLE)
         set(CMAKE_OSX_SYSROOT "${MACOS_SDK_PATH}" CACHE PATH "macOS SDK path")
         message(STATUS "macOS SDK path: ${MACOS_SDK_PATH}")
     endif()
+    # Universal en Apple Silicon (corre nativo; con Rosetta macOS avisa que la app Intel deja
+    # de funcionar en una version futura). Mismo criterio que LGA_Base_QT_C_Py.
     if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
-        set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OS X")
+        set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build architectures for OS X")
     else()
         set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OS X")
     endif()
